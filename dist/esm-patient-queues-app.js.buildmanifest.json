@@ -1,0 +1,409 @@
+{
+  "chunks": [
+    {
+      "rendered": true,
+      "initial": true,
+      "entry": true,
+      "recorded": false,
+      "size": 178591,
+      "sizes": {
+        "javascript": 130970,
+        "share-init": 168,
+        "runtime": 47453
+      },
+      "names": [
+        "@ugandaemr/esm-patient-queues-app"
+      ],
+      "idHints": [],
+      "runtime": [
+        "@ugandaemr/esm-patient-queues-app"
+      ],
+      "files": [
+        "esm-patient-queues-app.js",
+        "@ugandaemr/esm-patient-queues-app.3d7a0179ed6ae4cb.hot-update.js"
+      ],
+      "auxiliaryFiles": [
+        "@ugandaemr/esm-patient-queues-app.3d7a0179ed6ae4cb.hot-update.js.map",
+        "esm-patient-queues-app.js.map"
+      ],
+      "hash": "c176e1bcadcea1c0",
+      "childrenByOrder": {}
+    },
+    {
+      "rendered": true,
+      "initial": true,
+      "entry": true,
+      "recorded": false,
+      "size": 9129166,
+      "sizes": {
+        "javascript": 9080538,
+        "consume-shared": 210,
+        "share-init": 168,
+        "runtime": 48250
+      },
+      "names": [
+        "main"
+      ],
+      "idHints": [],
+      "runtime": [
+        "main"
+      ],
+      "files": [
+        "main.js",
+        "main.3d7a0179ed6ae4cb.hot-update.js"
+      ],
+      "auxiliaryFiles": [
+        "main.3d7a0179ed6ae4cb.hot-update.js.map",
+        "main.js.map"
+      ],
+      "hash": "babb9ba241d74f86",
+      "childrenByOrder": {}
+    },
+    {
+      "rendered": false,
+      "initial": false,
+      "entry": false,
+      "recorded": false,
+      "size": 289,
+      "sizes": {
+        "javascript": 289
+      },
+      "names": [],
+      "idHints": [],
+      "runtime": [
+        "@ugandaemr/esm-patient-queues-app",
+        "main"
+      ],
+      "files": [
+        "node_modules_babel_runtime_helpers_esm_objectWithoutPropertiesLoose_js.js"
+      ],
+      "auxiliaryFiles": [
+        "node_modules_babel_runtime_helpers_esm_objectWithoutPropertiesLoose_js.js.map"
+      ],
+      "hash": "f96e82c36a57f0ed",
+      "childrenByOrder": {}
+    },
+    {
+      "rendered": true,
+      "initial": false,
+      "entry": false,
+      "recorded": false,
+      "size": 722477,
+      "sizes": {
+        "javascript": 722435,
+        "consume-shared": 42
+      },
+      "names": [],
+      "idHints": [],
+      "runtime": [
+        "@ugandaemr/esm-patient-queues-app"
+      ],
+      "files": [
+        "src_index_ts.js",
+        "src_index_ts.3d7a0179ed6ae4cb.hot-update.js"
+      ],
+      "auxiliaryFiles": [
+        "src_index_ts.3d7a0179ed6ae4cb.hot-update.js.map",
+        "src_index_ts.js.map"
+      ],
+      "hash": "e35b5cefcc4a02ec",
+      "childrenByOrder": {}
+    },
+    {
+      "rendered": false,
+      "initial": false,
+      "entry": false,
+      "recorded": false,
+      "size": 9842,
+      "sizes": {
+        "javascript": 9842
+      },
+      "names": [],
+      "idHints": [],
+      "runtime": [
+        "@ugandaemr/esm-patient-queues-app",
+        "main"
+      ],
+      "files": [
+        "translations_en_json.js"
+      ],
+      "auxiliaryFiles": [],
+      "hash": "08e70dbcf9c9d486",
+      "childrenByOrder": {}
+    },
+    {
+      "rendered": false,
+      "initial": false,
+      "entry": false,
+      "recorded": false,
+      "size": 12,
+      "sizes": {
+        "javascript": 12
+      },
+      "names": [],
+      "idHints": [],
+      "runtime": [
+        "@ugandaemr/esm-patient-queues-app",
+        "main"
+      ],
+      "files": [
+        "translations_es_json.js"
+      ],
+      "auxiliaryFiles": [],
+      "hash": "a74a58407c3d7d22",
+      "childrenByOrder": {}
+    },
+    {
+      "rendered": false,
+      "initial": false,
+      "entry": false,
+      "recorded": false,
+      "size": 8061,
+      "sizes": {
+        "javascript": 8061
+      },
+      "names": [],
+      "idHints": [],
+      "runtime": [
+        "@ugandaemr/esm-patient-queues-app",
+        "main"
+      ],
+      "files": [
+        "translations_km_json.js"
+      ],
+      "auxiliaryFiles": [],
+      "hash": "cde1a6698e930768",
+      "childrenByOrder": {}
+    },
+    {
+      "rendered": false,
+      "initial": false,
+      "entry": false,
+      "recorded": false,
+      "reason": "split chunk (cache group: defaultVendors)",
+      "size": 5732537,
+      "sizes": {
+        "javascript": 5732537
+      },
+      "names": [],
+      "idHints": [
+        "vendors"
+      ],
+      "runtime": [
+        "@ugandaemr/esm-patient-queues-app"
+      ],
+      "files": [
+        "vendors-node_modules_carbon_icons-react_es_generated_bucket-10_js-node_modules_carbon_icons-r-f64918.js"
+      ],
+      "auxiliaryFiles": [
+        "vendors-node_modules_carbon_icons-react_es_generated_bucket-10_js-node_modules_carbon_icons-r-f64918.js.map"
+      ],
+      "hash": "c6fa5879ff6341c6",
+      "childrenByOrder": {}
+    },
+    {
+      "rendered": false,
+      "initial": false,
+      "entry": false,
+      "recorded": false,
+      "reason": "reused as split chunk (cache group: defaultVendors)",
+      "size": 10878335,
+      "sizes": {
+        "javascript": 10878335
+      },
+      "names": [],
+      "idHints": [
+        "vendors"
+      ],
+      "runtime": [
+        "@ugandaemr/esm-patient-queues-app",
+        "main"
+      ],
+      "files": [
+        "vendors-node_modules_openmrs_esm-framework_src_internal_ts.js"
+      ],
+      "auxiliaryFiles": [
+        "vendors-node_modules_openmrs_esm-framework_src_internal_ts.js.map"
+      ],
+      "hash": "1494ba655e93dfb6",
+      "childrenByOrder": {}
+    },
+    {
+      "rendered": false,
+      "initial": false,
+      "entry": false,
+      "recorded": false,
+      "reason": "split chunk (cache group: defaultVendors)",
+      "size": 1352491,
+      "sizes": {
+        "javascript": 1352491
+      },
+      "names": [],
+      "idHints": [
+        "vendors"
+      ],
+      "runtime": [
+        "@ugandaemr/esm-patient-queues-app",
+        "main"
+      ],
+      "files": [
+        "vendors-node_modules_react-dom_index_js.js"
+      ],
+      "auxiliaryFiles": [
+        "vendors-node_modules_react-dom_index_js.js.map"
+      ],
+      "hash": "4bcfbf83a783c952",
+      "childrenByOrder": {}
+    },
+    {
+      "rendered": false,
+      "initial": false,
+      "entry": false,
+      "recorded": false,
+      "reason": "reused as split chunk (cache group: defaultVendors)",
+      "size": 44511,
+      "sizes": {
+        "javascript": 44511
+      },
+      "names": [],
+      "idHints": [
+        "vendors"
+      ],
+      "runtime": [
+        "@ugandaemr/esm-patient-queues-app",
+        "main"
+      ],
+      "files": [
+        "vendors-node_modules_react-i18next_dist_es_index_js.js"
+      ],
+      "auxiliaryFiles": [
+        "vendors-node_modules_react-i18next_dist_es_index_js.js.map"
+      ],
+      "hash": "dd880ae41bfa81b3",
+      "childrenByOrder": {}
+    },
+    {
+      "rendered": false,
+      "initial": false,
+      "entry": false,
+      "recorded": false,
+      "reason": "reused as split chunk (cache group: defaultVendors)",
+      "size": 466855,
+      "sizes": {
+        "javascript": 466855
+      },
+      "names": [],
+      "idHints": [
+        "vendors"
+      ],
+      "runtime": [
+        "@ugandaemr/esm-patient-queues-app",
+        "main"
+      ],
+      "files": [
+        "vendors-node_modules_react-router-dom_dist_index_js.js"
+      ],
+      "auxiliaryFiles": [
+        "vendors-node_modules_react-router-dom_dist_index_js.js.map"
+      ],
+      "hash": "3e4ef4b09d6cb147",
+      "childrenByOrder": {}
+    },
+    {
+      "rendered": false,
+      "initial": false,
+      "entry": false,
+      "recorded": false,
+      "reason": "reused as split chunk (cache group: defaultVendors)",
+      "size": 113083,
+      "sizes": {
+        "javascript": 113083
+      },
+      "names": [],
+      "idHints": [
+        "vendors"
+      ],
+      "runtime": [
+        "@ugandaemr/esm-patient-queues-app",
+        "main"
+      ],
+      "files": [
+        "vendors-node_modules_react_index_js.js"
+      ],
+      "auxiliaryFiles": [
+        "vendors-node_modules_react_index_js.js.map"
+      ],
+      "hash": "17df60dfc63c049c",
+      "childrenByOrder": {}
+    },
+    {
+      "rendered": false,
+      "initial": false,
+      "entry": false,
+      "recorded": false,
+      "reason": "split chunk (cache group: defaultVendors)",
+      "size": 1142147,
+      "sizes": {
+        "javascript": 1142147
+      },
+      "names": [],
+      "idHints": [
+        "vendors"
+      ],
+      "runtime": [
+        "@ugandaemr/esm-patient-queues-app",
+        "main"
+      ],
+      "files": [
+        "vendors-node_modules_style-loader_dist_runtime_injectStylesIntoStyleTag_js-node_modules_style-26cb62.js"
+      ],
+      "auxiliaryFiles": [
+        "vendors-node_modules_style-loader_dist_runtime_injectStylesIntoStyleTag_js-node_modules_style-26cb62.js.map"
+      ],
+      "hash": "6ae68e84b7e49c38",
+      "childrenByOrder": {}
+    },
+    {
+      "rendered": false,
+      "initial": false,
+      "entry": false,
+      "recorded": false,
+      "reason": "reused as split chunk (cache group: default)",
+      "size": 126,
+      "sizes": {
+        "consume-shared": 126
+      },
+      "names": [],
+      "idHints": [],
+      "runtime": [
+        "@ugandaemr/esm-patient-queues-app",
+        "main"
+      ],
+      "files": [],
+      "auxiliaryFiles": [],
+      "hash": "ac4af4eb8e87c258",
+      "childrenByOrder": {}
+    },
+    {
+      "rendered": false,
+      "initial": false,
+      "entry": false,
+      "recorded": false,
+      "reason": "reused as split chunk (cache group: default)",
+      "size": 42,
+      "sizes": {
+        "consume-shared": 42
+      },
+      "names": [],
+      "idHints": [],
+      "runtime": [
+        "@ugandaemr/esm-patient-queues-app",
+        "main"
+      ],
+      "files": [],
+      "auxiliaryFiles": [],
+      "hash": "d6da53b7a49fcfb1",
+      "childrenByOrder": {}
+    }
+  ]
+}

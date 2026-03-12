@@ -1,0 +1,23 @@
+.board-body{
+  height: 100vh;
+}
+
+.expandContractButton {
+  background-color: white;
+}
+
+.board-center {
+  display: flex;
+  justify-content: center;
+  height: 100vh;
+
+  border-right: 1px solid #343332;
+}
+
+.expandContractButton {
+  :global(.cds--popover-container) {
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+}
