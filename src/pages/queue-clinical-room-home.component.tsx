@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { useTranslation } from 'react-i18next';
-import styles from './active-visits/active-visits-table.scss';
+import styles from '../active-visits/active-visits-table.scss';
 import { Tabs, TabPanel, TabList, Tab, TabPanels } from '@carbon/react';
 import { useSession, userHasAccess } from '@openmrs/esm-framework';
 import PatientQueueHeader from '../components/patient-queue-header/patient-queue-header.component';
