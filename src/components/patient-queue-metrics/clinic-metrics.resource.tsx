@@ -1,8 +1,8 @@
 import useSWR from 'swr';
 import { openmrsFetch, restBaseUrl } from '@openmrs/esm-framework';
-import { PatientQueue } from '../../types/patient-queues';
+import { type PatientQueue } from '../../types/patient-queues';
 import { getMetrics } from './clinic-metrics.component';
-import { Value } from '../../summary-tiles/summary-tile.component';
+import { type Value } from '../../summary-tiles/summary-tile.component';
 export interface PatientStats {
   locationTag: LocationTag;
   pending: number;
@@ -27,7 +27,7 @@ export interface Link {
   resourceAlias: string;
 }
 
-export function useServicePointCount(parentLocation: string, beforeDate: String, afterDate: String) {
+export function useServicePointCount(parentLocation: string, beforeDate: string, afterDate: string) {
   const apiUrl = `${restBaseUrl}/queuestatistics?parentLocation=${parentLocation}&toDate=${afterDate}&fromDate=${beforeDate}`;
   const { data, error, isLoading, isValidating, mutate } = useSWR<{ data: { results: Array<PatientStats> } }, Error>(
     apiUrl,
@@ -35,7 +35,7 @@ export function useServicePointCount(parentLocation: string, beforeDate: String,
   );
 
   const servicePoints = ['Triage', 'Clinical Room', 'Laboratory', 'Radiology', 'Main Pharmacy'];
-  let patientStatsArray: Array<Value> = [];
+  const patientStatsArray: Array<Value> = [];
 
   servicePoints.map((servicePoint) => {
     patientStatsArray.push(getMetrics(servicePoint, data?.data?.results));

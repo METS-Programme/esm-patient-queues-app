@@ -1,16 +1,16 @@
 import dayjs from 'dayjs';
 import useSWR from 'swr';
 import {
-  Workspace2DefinitionProps,
+  type Workspace2DefinitionProps,
   launchWorkspace2,
   openmrsFetch,
   restBaseUrl,
   usePagination,
 } from '@openmrs/esm-framework';
-import { PatientQueue } from '../types/patient-queues';
-import { NewVisitPayload, ProviderResponse } from '../types';
-import { ResourceFilterCriteria, ResourceRepresentation, toQueryParams } from '../utils/resource-filter-criteria';
-import { PageableResult } from '../utils/pageable-result';
+import { type PatientQueue } from '../types/patient-queues';
+import { type NewVisitPayload, type ProviderResponse } from '../types';
+import { type ResourceFilterCriteria, ResourceRepresentation, toQueryParams } from '../utils/resource-filter-criteria';
+import { type PageableResult } from '../utils/pageable-result';
 import { useEffect, useState } from 'react';
 import last from 'lodash-es/last';
 export const patientQueueStartVisitFormWorkspace = 'patient-queues-start-visit-form-workspace';

@@ -49,9 +49,9 @@ export interface QueueRoom {
   address6: string;
   tags: Tags[];
   parentLocation: ParentLocation;
-  childLocations: String[];
+  childLocations: string[];
   retired: boolean;
-  attributes: String[];
+  attributes: string[];
   address7: string;
   address8: string;
   address9: string;
@@ -85,9 +85,9 @@ export interface LocationTo {
   address6: string;
   tags: Tags[];
   parentlocation: ParentLocation;
-  childlocations: String[];
+  childlocations: string[];
   retired: boolean;
-  attributes: String[];
+  attributes: string[];
   address7: string;
   address8: string;
   address9: string;
@@ -121,9 +121,9 @@ export interface LocationFrom {
   address6: string;
   tags: Tags[];
   parentlocation: ParentLocation;
-  childlocations: String[];
+  childlocations: string[];
   retired: boolean;
-  attributes: String[];
+  attributes: string[];
   address7: string;
   address8: string;
   address9: string;
