@@ -1,4 +1,4 @@
-import React, { AnchorHTMLAttributes } from 'react';
+import React, { type AnchorHTMLAttributes } from 'react';
 import { Button, Tooltip } from '@carbon/react';
 import { Edit } from '@carbon/react/icons';
 import { navigate } from '@openmrs/esm-framework';

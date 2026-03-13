@@ -1,8 +1,8 @@
-import { PatientQueue } from '../../types/patient-queues';
+import { type PatientQueue } from '../../types/patient-queues';
 import { trimVisitNumber } from '../../helpers/functions';
 
 function readTicketNumber(queue: PatientQueue) {
-  let utterance = new SpeechSynthesisUtterance();
+  const utterance = new SpeechSynthesisUtterance();
   utterance.text = `Ticket number ${trimVisitNumber(queue.visitNumber).split('').join(' ')} move to ${
     queue.locationTo.name
   }`;

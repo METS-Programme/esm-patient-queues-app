@@ -13,7 +13,7 @@ import {
 } from '@carbon/react';
 import {
   ExtensionSlot,
-  Workspace2DefinitionProps,
+  type Workspace2DefinitionProps,
   restBaseUrl,
   showNotification,
   showSnackbar,
@@ -28,7 +28,7 @@ import { useTranslation } from 'react-i18next';
 import styles from './start-a-visit-form.scss';
 import { useQueueRoomLocations } from '../../hooks/useQueueRooms';
 import {
-  NewCheckInPayload,
+  type NewCheckInPayload,
   checkCurrentVisit,
   checkInQueue,
   useProviders,
@@ -36,7 +36,7 @@ import {
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  CreateQueueEntryFormData,
+  type CreateQueueEntryFormData,
   createQueueEntrySchema,
 } from '../../active-visits/patient-queue-validation-schema.resource';
 import { QueueStatus, handleMutate } from '../../utils/utils';
@@ -51,8 +51,7 @@ const StartVisitForm: React.FC<
     VisitFormProps,
     {
       startVisitWorkspaceName: string;
-    },
-    {}
+    }
   >
 > = ({ closeWorkspace, workspaceProps: { patientUuid } }) => {
   const { t } = useTranslation();

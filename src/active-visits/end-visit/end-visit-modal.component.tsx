@@ -81,7 +81,6 @@ const EndVisitConfirmation: React.FC<EndVisitConfirmationProps> = ({ closeModal,
     try {
       let hasEndedVisit = false;
       let hasEndedQueue = false;
-      let queueEntry;
 
       // 1. Attempt to end the visit if it exists
       if (activeVisit?.uuid) {
@@ -95,7 +94,7 @@ const EndVisitConfirmation: React.FC<EndVisitConfirmationProps> = ({ closeModal,
       const queueResponse = await getCurrentPatientQueueByPatientUuid(patientUuid, sessionUser?.sessionLocation?.uuid);
 
       const queues = queueResponse?.data?.results?.[0]?.patientQueues || [];
-      queueEntry = queues.find((item) => item?.patient?.uuid === patientUuid);
+      const queueEntry = queues.find((item) => item?.patient?.uuid === patientUuid);
 
       if (queueEntry) {
         await updateQueueEntry(QueueStatus.Completed, provider, queueEntry.uuid, 0, priorityLabels[0], 'visit-ended');
