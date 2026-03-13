@@ -1,14 +1,14 @@
 import { defineConfigSchema, getSyncLifecycle } from '@openmrs/esm-framework';
 import { configSchema } from './config-schema';
 import { moduleName } from './constants';
-import { createDashboardLink } from './createDashboardLink';
+import { createDashboardLink } from './hooks/createDashboardLink';
 import { ClinicalRoomMeta, ReceptionMeta, TriageMeta } from './dashboard.meta';
 import moveToNextServicePointActionComponent from './active-visits/move-to-next-service-point-patient-action.component';
 import notesModalComponent from './active-visits/notes/notes-dialog.component';
 import pickPatientEntryQueueComponent from './active-visits/pick-patient-dialog.component';
 import queueScreenComponent from './components/queue-board/queue-board.component';
 import rootComponent from './root.component';
-import homeDashboardComponent from './home.component';
+import homeDashboardComponent from './pages/home.component';
 import triageRoomComponent from './queue-triage-home.component';
 import receptionRoomComponent from './queue-reception-home.component';
 import clinicalRoomComponent from './queue-clinical-room-home.component';
