@@ -2,7 +2,7 @@ import React from 'react';
 import { Button, Form, ModalBody, ModalFooter, ModalHeader } from '@carbon/react';
 import { useTranslation } from 'react-i18next';
 import styles from './notes-dialog.scss';
-import { PatientQueue } from '../../types/patient-queues';
+import { type PatientQueue } from '../../types/patient-queues';
 
 interface NotesDialogProps {
   queueEntry: PatientQueue;

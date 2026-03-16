@@ -23,9 +23,19 @@ import {
   Tile,
   TableToolbarSearch,
 } from '@carbon/react';
-import { getOriginFromPathName, useParentLocation, usePatientQueuePages } from '../active-visits/patient-queues.resource';
+import {
+  getOriginFromPathName,
+  useParentLocation,
+  usePatientQueuePages,
+} from '../active-visits/patient-queues.resource';
 import { useServicePointCount } from '../components/patient-queue-metrics/clinic-metrics.resource';
-import { buildStatusString, formatWaitTime, getTagColor, getWaitTimeInMinutes, trimVisitNumber } from '../helpers/functions';
+import {
+  buildStatusString,
+  formatWaitTime,
+  getTagColor,
+  getWaitTimeInMinutes,
+  trimVisitNumber,
+} from '../helpers/functions';
 import StatusIcon from '../utils/utils';
 import EditActionsMenu from '../active-visits/edit-action-menu.components';
 import PrintActionsMenu from '../active-visits/print-action-menu.components';

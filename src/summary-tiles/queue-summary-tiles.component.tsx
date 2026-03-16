@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from './queue-summary-tiles.scss';
-import { AssignedExtension, useConnectedExtensions, Extension } from '@openmrs/esm-framework';
+import { type AssignedExtension, useConnectedExtensions, Extension } from '@openmrs/esm-framework';
 import { ComponentContext } from '@openmrs/esm-framework/src/internal';
 
 const QueueSummaryTiles: React.FC = () => {

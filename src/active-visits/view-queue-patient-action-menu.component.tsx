@@ -1,4 +1,4 @@
-import React, { AnchorHTMLAttributes, useCallback, useEffect } from 'react';
+import React, { type AnchorHTMLAttributes, useCallback, useEffect } from 'react';
 
 import { Button } from '@carbon/react';
 import { Dashboard } from '@carbon/react/icons';

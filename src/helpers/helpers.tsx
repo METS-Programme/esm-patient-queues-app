@@ -1,5 +1,5 @@
 import { getGlobalStore } from '@openmrs/esm-framework';
-import { PatientQueue } from '../types/patient-queues';
+import { type PatientQueue } from '../types/patient-queues';
 
 // selected queue patient uuid
 const initialPatientQueueUuidState = { patientQueueUuid: localStorage.getItem('patientQueueUuid') };

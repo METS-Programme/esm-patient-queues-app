@@ -3,7 +3,7 @@ import styles from './active-visits-print.scss';
 import { QRCodeSVG } from 'qrcode.react';
 
 import PatientQueueDetailsTable from './patient-queue-details-table.component';
-import { PatientQueue } from '../../types/patient-queues';
+import { type PatientQueue } from '../../types/patient-queues';
 
 interface VisitCardToPrintProps {
   queueEntry: PatientQueue;

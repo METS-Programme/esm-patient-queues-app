@@ -1,4 +1,4 @@
-import React, { AnchorHTMLAttributes, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { type AnchorHTMLAttributes, useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   DataTable,
@@ -35,7 +35,7 @@ import NotesActionsMenu from '../notes/notes-action-menu.components';
 import styles from '../active-visits-table.scss';
 import dayjs from 'dayjs';
 import StatusIcon, { QueueStatus } from '../../utils/utils';
-import { PatientQueueConfig } from '../../config-schema';
+import { type PatientQueueConfig } from '../../config-schema';
 import MovetoNextServicePointReassignAction from '../move-to-next-service-point-re-assign-action.component';
 import ViewQueuePatientActionMenu from '../view-queue-patient-action-menu.component';
 

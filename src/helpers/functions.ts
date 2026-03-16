@@ -55,7 +55,7 @@ export const getProviderTagColor = (entryProvider: string, loggedInProviderName:
 export type amPm = 'AM' | 'PM';
 
 export const convertTime12to24 = (time12h, timeFormat: amPm) => {
-  let [hours, minutes] = time12h.split(':');
+  let [hours] = time12h.split(':');
 
   if (hours === '12' && timeFormat === 'AM') {
     hours = '00';
@@ -65,7 +65,7 @@ export const convertTime12to24 = (time12h, timeFormat: amPm) => {
     hours = hours === '12' ? hours : parseInt(hours, 10) + 12;
   }
 
-  return [hours, minutes];
+  return [hours];
 };
 
 export const getWaitTimeInMinutes = (queue) => {

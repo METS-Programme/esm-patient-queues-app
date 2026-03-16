@@ -13,7 +13,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { trimVisitNumber } from '../helpers/functions';
 import { extractErrorMessagesFromResponse, handleMutate } from '../utils/utils';
-import { PatientQueue } from '../types/patient-queues';
+import { type PatientQueue } from '../types/patient-queues';
 import { getCareProvider, updateQueueEntry } from './patient-queues.resource';
 
 interface PickQueuePatientDialogProps {
