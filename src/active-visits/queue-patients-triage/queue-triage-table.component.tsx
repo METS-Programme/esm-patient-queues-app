@@ -20,7 +20,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { isDesktop, useConfig, useLayoutType, useSession } from '@openmrs/esm-framework';
 
-import { getOriginFromPathName, useParentLocation, usePatientQueuePages } from '../patient-queues.resource';
+import { getOriginFromPathName, useParentLocation, usePatientQueuePages } from '../resources/patient-queues.resource';
 import {
   buildStatusString,
   formatWaitTime,

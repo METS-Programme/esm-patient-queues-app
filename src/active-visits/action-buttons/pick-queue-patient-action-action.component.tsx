@@ -4,7 +4,7 @@ import { showModal, showSnackbar, useSession } from '@openmrs/esm-framework';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type PatientQueue } from '../../types/patient-queues';
-import { usePatientQueuePages } from '../patient-queues.resource';
+import { usePatientQueuePages } from '../resources/patient-queues.resource';
 import { QueueEnumStatus, QueueStatus } from '../../utils/utils';
 import { updateSelectedPatientQueueUuid } from '../../helpers/helpers';
 

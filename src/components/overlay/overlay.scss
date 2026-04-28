@@ -5,38 +5,44 @@
 .desktopOverlay {
   position: fixed;
   top: spacing.$spacing-09;
-  width: 37rem;
   right: 0;
   bottom: 0;
-  border-left: 1px solid $text-03;
-  background-color: $ui-01;
-  overflow-y: auto;
+  width: 37rem;
   height: calc(100vh - 3rem);
-  z-index: 99999;
-}
-
-.desktopOverlay::after {
-  height: 100%;
+  background-color: $ui-01;
   border-left: 1px solid $text-03;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .tabletOverlay {
   position: fixed;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 9999;
-  background-color: $ui-01;
-  overflow: hidden;
-  padding-top: spacing.$spacing-09;
-  display: grid;
-  grid-template-rows: 1fr auto;
-  overflow-y: auto;
+  inset: 0;
   height: 100vh;
+  background-color: $ui-01;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.desktopHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: spacing.$spacing-09;
+  background-color: $ui-03;
+  border-bottom: 1px solid $text-03;
+  flex-shrink: 0;
 }
 
 .tabletOverlayHeader {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+
   button {
     @include brand-01(background-color);
   }
@@ -46,43 +52,41 @@
   }
 }
 
-.desktopHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: $ui-03;
-  border-bottom: 1px solid $text-03;
-  position: sticky;
-  position: -webkit-sticky;
-  width: 100%;
-  z-index: 1000;
-  top: 0;
-}
-
 .headerContent {
   @include type.type-style('heading-compact-02');
-  padding: 0 spacing.$spacing-05;
+
   color: $ui-05;
+  padding: 0 spacing.$spacing-05;
+  margin: 0;
 }
 
-.closeButton {
-  background-color: $ui-background;
+.closePanelButton {
   color: $ui-05;
   fill: $ui-05;
+}
+
+.overlayContent {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 /* Desktop */
 :global(.omrs-breakpoint-gt-tablet) {
   .overlayContent {
-    padding: 0 0 0 0;
-    overflow-y: auto;
+    padding: 0;
   }
 }
 
 /* Tablet */
 :global(.omrs-breakpoint-lt-desktop) {
   .overlayContent {
-    padding: 0 0 0 0;
-    overflow-y: auto;
+    padding: 0;
+  }
+}
+
+@media (max-width: 672px) {
+  .headerContent {
+    padding: 0 spacing.$spacing-04;
   }
 }

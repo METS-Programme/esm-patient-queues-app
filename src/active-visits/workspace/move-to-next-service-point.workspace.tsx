@@ -35,10 +35,13 @@ import {
   getPatientQueueUuid,
   updateQueueEntry,
   useProviders,
-} from '../patient-queues.resource';
+} from '../resources/patient-queues.resource';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { type CreateQueueEntryFormData, createQueueEntrySchema } from '../patient-queue-validation-schema.resource';
+import {
+  type CreateQueueEntryFormData,
+  createQueueEntrySchema,
+} from '../resources/patient-queue-validation-schema.resource';
 import { getSelectedPatientQueueUuid } from '../../helpers/helpers';
 import { type PatientQueue } from '../../types/patient-queues';
 

@@ -24,7 +24,7 @@ import {
   getOriginFromPathName,
   useParentLocation,
   usePatientQueuePages,
-} from '../active-visits/patient-queues.resource';
+} from '../active-visits/resources/patient-queues.resource';
 import { useServicePointCount } from '../components/patient-queue-metrics/clinic-metrics.resource';
 import {
   buildStatusString,

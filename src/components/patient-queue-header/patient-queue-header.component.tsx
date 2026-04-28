@@ -3,7 +3,7 @@ import { Calendar, Location } from '@carbon/react/icons';
 import { formatDate, useSession } from '@openmrs/esm-framework';
 import { useTranslation } from 'react-i18next';
 
-import { useParentLocation } from '../../active-visits/patient-queues.resource';
+import { useParentLocation } from '../../active-visits/resources/patient-queues.resource';
 import PatientQueueIllustration from './patient-queue-illustration.component';
 
 import styles from './patient-queue-header.scss';

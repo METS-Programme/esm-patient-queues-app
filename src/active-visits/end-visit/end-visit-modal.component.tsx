@@ -18,7 +18,7 @@ import {
   getCurrentPatientQueueByPatientUuid,
   updateQueueEntry,
   updateVisit,
-} from '../patient-queues.resource';
+} from '../resources/patient-queues.resource';
 import { QueueStatus, extractErrorMessagesFromResponse, handleMutate } from '../../utils/utils';
 
 interface EndVisitConfirmationProps {

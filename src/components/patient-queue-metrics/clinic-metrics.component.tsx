@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 
 import { PRIVILEGE_RECEPTION_METRIC, PRIVILIGE_TRIAGE_METRIC } from '../../constants';
-import { useParentLocation } from '../../active-visits/patient-queues.resource';
+import { useParentLocation } from '../../active-visits/resources/patient-queues.resource';
 import SummaryTile, { type SummaryTileValue } from '../../summary-tiles/summary-tile.component';
 import { useServicePointCount } from './clinic-metrics.resource';
 

@@ -26,13 +26,21 @@ import {
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import styles from './start-a-visit-form.scss';
-import { useQueueRoomLocations } from '../../../hooks/useQueueRooms';
-import { type NewCheckInPayload, checkCurrentVisit, checkInQueue, useProviders } from '../../patient-queues.resource';
+import { useQueueRoomLocations } from '../../hooks/useQueueRooms';
+import {
+  type NewCheckInPayload,
+  checkCurrentVisit,
+  checkInQueue,
+  useProviders,
+} from '../resources/patient-queues.resource';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { type CreateQueueEntryFormData, createQueueEntrySchema } from '../../patient-queue-validation-schema.resource';
-import { QueueStatus, handleMutate } from '../../../utils/utils';
-import { type PatientQueueConfig } from '../../../config-schema';
+import {
+  type CreateQueueEntryFormData,
+  createQueueEntrySchema,
+} from '../resources/patient-queue-validation-schema.resource';
+import { QueueStatus, handleMutate } from '../../utils/utils';
+import { type PatientQueueConfig } from '../../config-schema';
 
 type VisitFormProps = {
   patientUuid: string;

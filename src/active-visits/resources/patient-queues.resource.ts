@@ -7,10 +7,14 @@ import {
   restBaseUrl,
   usePagination,
 } from '@openmrs/esm-framework';
-import { type PatientQueue } from '../types/patient-queues';
-import { type NewVisitPayload, type ProviderResponse } from '../types';
-import { type ResourceFilterCriteria, ResourceRepresentation, toQueryParams } from '../utils/resource-filter-criteria';
-import { type PageableResult } from '../utils/pageable-result';
+import { type PatientQueue } from '../../types/patient-queues';
+import { type NewVisitPayload, type ProviderResponse } from '../../types';
+import {
+  type ResourceFilterCriteria,
+  ResourceRepresentation,
+  toQueryParams,
+} from '../../utils/resource-filter-criteria';
+import { type PageableResult } from '../../utils/pageable-result';
 import { useEffect, useState } from 'react';
 import last from 'lodash-es/last';
 export const patientQueueStartVisitFormWorkspace = 'patient-queues-start-visit-form-workspace';
