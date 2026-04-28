@@ -4,7 +4,7 @@ import { Button } from '@carbon/react';
 import { Dashboard } from '@carbon/react/icons';
 import { useTranslation } from 'react-i18next';
 import { navigate } from '@openmrs/esm-framework';
-import { updateSelectedPatientQueueUuid } from '../helpers/helpers';
+import { updateSelectedPatientQueueUuid } from '../../helpers/helpers';
 
 interface NameLinkProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
   to: string;

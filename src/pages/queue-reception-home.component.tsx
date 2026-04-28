@@ -34,8 +34,8 @@ import {
   trimVisitNumber,
 } from '../helpers/functions';
 import StatusIcon from '../utils/utils';
-import EditActionsMenu from '../active-visits/edit-action-menu.components';
-import PrintActionsMenu from '../active-visits/print-action-menu.components';
+import EditActionsMenu from '../active-visits/action-buttons/edit-action-menu.components';
+import PrintActionsMenu from '../active-visits/action-buttons/print-action-menu.components';
 import CheckInLauncher from '../components/check-in/check-in.component';
 import PatientQueueHeader from '../components/patient-queue-header/patient-queue-header.component';
 import QueueLauncher from '../components/queue-launcher/queue-launcher.component';
@@ -184,7 +184,7 @@ const ReceptionHome: React.FC = () => {
 
   const tableRows = useMemo(() => {
     return filteredPatientQueueEntries.map((queueEntry: QueueEntry) => {
-      const normalizedStatus = queueEntry.status?.toLowerCase() ?? '';
+      const normalizedStatus = (queueEntry.status?.toLowerCase() ?? 'pending') as 'pending' | 'picked' | 'completed';
       const waitTimeInMinutes = getWaitTimeInMinutes(queueEntry);
 
       return {

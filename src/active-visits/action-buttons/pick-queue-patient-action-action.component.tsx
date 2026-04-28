@@ -3,10 +3,10 @@ import { Notification } from '@carbon/react/icons';
 import { showModal, showSnackbar, useSession } from '@openmrs/esm-framework';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type PatientQueue } from '../types/patient-queues';
-import { usePatientQueuePages } from './patient-queues.resource';
-import { QueueEnumStatus, QueueStatus } from '../utils/utils';
-import { updateSelectedPatientQueueUuid } from '../helpers/helpers';
+import { type PatientQueue } from '../../types/patient-queues';
+import { usePatientQueuePages } from '../patient-queues.resource';
+import { QueueEnumStatus, QueueStatus } from '../../utils/utils';
+import { updateSelectedPatientQueueUuid } from '../../helpers/helpers';
 
 interface PickPatientActionMenuProps {
   queueEntry: PatientQueue;

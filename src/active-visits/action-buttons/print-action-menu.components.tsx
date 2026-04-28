@@ -3,8 +3,8 @@ import { Button, Tooltip } from '@carbon/react';
 import { Printer } from '@carbon/react/icons';
 import { useTranslation } from 'react-i18next';
 import { useReactToPrint } from 'react-to-print';
-import VisitCardToPrint from './active-visits-print/active-visits-print.component';
-import { type PatientQueue } from '../types/patient-queues';
+import VisitCardToPrint from '../active-visits-print/active-visits-print.component';
+import { type PatientQueue } from '../../types/patient-queues';
 
 interface PrintActionsMenuProps {
   patient: PatientQueue;

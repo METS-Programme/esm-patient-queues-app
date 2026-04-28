@@ -24,9 +24,9 @@ import {
   type Workspace2DefinitionProps,
 } from '@openmrs/esm-framework';
 import { useTranslation } from 'react-i18next';
-import { useQueueRoomLocations } from '../hooks/useQueueRooms';
+import { useQueueRoomLocations } from '../../hooks/useQueueRooms';
 import styles from './move-to-next-service-point.scss';
-import { QueueStatus, extractErrorMessagesFromResponse, handleMutate } from '../utils/utils';
+import { QueueStatus, extractErrorMessagesFromResponse, handleMutate } from '../../utils/utils';
 import {
   type NewQueuePayload,
   addQueueEntry,
@@ -35,12 +35,12 @@ import {
   getPatientQueueUuid,
   updateQueueEntry,
   useProviders,
-} from './patient-queues.resource';
+} from '../patient-queues.resource';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { type CreateQueueEntryFormData, createQueueEntrySchema } from './patient-queue-validation-schema.resource';
-import { getSelectedPatientQueueUuid } from '../helpers/helpers';
-import { type PatientQueue } from '../types/patient-queues';
+import { type CreateQueueEntryFormData, createQueueEntrySchema } from '../patient-queue-validation-schema.resource';
+import { getSelectedPatientQueueUuid } from '../../helpers/helpers';
+import { type PatientQueue } from '../../types/patient-queues';
 
 type MoveToNextServicePointFormProps = {
   patientUuid: string;

@@ -4,15 +4,40 @@ import { restBaseUrl } from '@openmrs/esm-framework';
 import debounce from 'lodash-es/debounce';
 import { mutate } from 'swr';
 
-export function extractErrorMessagesFromResponse(errorObject) {
-  const fieldErrors = errorObject?.responseBody?.error?.fieldErrors;
-  if (!fieldErrors) {
-    return [errorObject?.responseBody?.error?.message ?? errorObject?.message];
-  }
-  return Object.values(fieldErrors).flatMap((errors: Array<Error>) => errors.map((error) => error.message));
+interface FieldError {
+  message: string;
+  [key: string]: unknown;
 }
 
-export const QueueStatus = { Completed: 'completed', Pending: 'pending', Picked: 'picked' };
+interface ErrorResponse {
+  message?: string;
+  fieldErrors?: Record<string, FieldError[]>;
+}
+
+interface ResponseBody {
+  error?: ErrorResponse;
+}
+
+export interface ErrorObject {
+  message?: string;
+  responseBody?: ResponseBody;
+}
+
+export interface StatusIconProps {
+  status: 'pending' | 'picked' | 'completed';
+}
+
+export interface QueueStatusOptions {
+  Completed: 'completed';
+  Pending: 'pending';
+  Picked: 'picked';
+}
+
+export const QueueStatus: QueueStatusOptions = {
+  Completed: 'completed',
+  Pending: 'pending',
+  Picked: 'picked',
+};
 
 export enum QueueEnumStatus {
   COMPLETED = 'COMPLETED',
@@ -28,14 +53,23 @@ const refreshDashboardMetrics = debounce(
   300,
 );
 
-export const handleMutate = (url: string) => {
+export const handleMutate = (url: string): void => {
   mutate((key) => typeof key === 'string' && key.startsWith(url), undefined, {
     revalidate: true,
   });
   refreshDashboardMetrics();
 };
 
-function StatusIcon({ status }) {
+export function extractErrorMessagesFromResponse(errorObject: ErrorObject): string[] {
+  const fieldErrors = errorObject?.responseBody?.error?.fieldErrors;
+  if (!fieldErrors) {
+    const message = errorObject?.responseBody?.error?.message ?? errorObject?.message;
+    return message ? [message] : [];
+  }
+  return Object.values(fieldErrors).flatMap((errors: FieldError[]) => errors.map((error) => error.message));
+}
+
+function StatusIcon({ status }: StatusIconProps): JSX.Element | null {
   switch (status) {
     case 'pending':
       return <InProgress size={16} />;
