@@ -1,19 +1,49 @@
-import React from 'react';
-import SummaryTile from '../summary-tiles/summary-tile.component';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+
 import { usePatientQueuePages } from '../active-visits/patient-queues.resource';
+import SummaryTile, { type SummaryTileValue } from '../summary-tiles/summary-tile.component';
 
 const CheckedInTile: React.FC = () => {
   const { t } = useTranslation();
 
-  const { totalCount } = usePatientQueuePages('', '');
+  const { totalCount = 0, isLoading, error } = usePatientQueuePages('', '');
 
-  return (
-    <SummaryTile
-      values={[{ label: t('checkedInPatients', 'Checked In Patients'), value: totalCount }]}
-      headerLabel={t('pending', 'Pending')}
-    />
-  );
+  const values = useMemo<SummaryTileValue[]>(() => {
+    if (isLoading) {
+      return [
+        {
+          label: t('checkedInPatients', 'Checked In Patients'),
+          value: t('loading', 'Loading...'),
+        },
+      ];
+    }
+
+    if (error) {
+      return [
+        {
+          label: t('checkedInPatients', 'Checked In Patients'),
+          value: '—',
+          status: [
+            {
+              label: t('failedToLoad', 'Failed to load'),
+              value: '',
+              color: 'red',
+            },
+          ],
+        },
+      ];
+    }
+
+    return [
+      {
+        label: t('checkedInPatients', 'Checked In Patients'),
+        value: totalCount ?? 0,
+      },
+    ];
+  }, [error, isLoading, t, totalCount]);
+
+  return <SummaryTile values={values} headerLabel={t('pending', 'Pending')} />;
 };
 
 export default CheckedInTile;
