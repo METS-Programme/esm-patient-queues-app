@@ -1,0 +1,146 @@
+@use '@carbon/styles/scss/type';
+@use '@carbon/styles/scss/spacing';
+@use '@openmrs/esm-styleguide/src/vars' as *;
+
+.container {
+  :global(.cds--tabs.cds--tabs--contained .cds--tabs__nav-item--selected) {
+    background-color: transparent;
+    border-left: 1px solid $ui-03;
+    border-right: 1px solid $ui-03;
+  }
+}
+
+.tableContainer {
+  border: 1px solid $ui-03;
+  margin: 0 spacing.$spacing-05;
+  padding: 0;
+
+  a {
+    text-decoration: none;
+  }
+
+  th {
+    color: $text-02;
+  }
+
+  :global(.cds--data-table) {
+    background-color: $ui-03;
+  }
+
+  :global(.cds--toolbar-search-container-active.cds--search) {
+    margin-right: spacing.$spacing-05;
+  }
+}
+
+.tableToolbar {
+  position: static;
+  overflow: visible;
+  background-color: transparent;
+}
+
+.toolbarContent {
+  display: flex;
+  align-items: center;
+  gap: spacing.$spacing-05;
+  width: 100%;
+  min-height: spacing.$spacing-07;
+  margin-bottom: spacing.$spacing-02;
+}
+
+.search {
+  max-width: 16rem;
+
+  input {
+    background-color: $ui-02 !important;
+  }
+}
+
+.toggle {
+  margin: spacing.$spacing-06;
+}
+
+.activeVisitsTable {
+  tr:last-of-type {
+    td {
+      border-bottom: none;
+    }
+  }
+}
+
+.statusContainer {
+  display: flex;
+  align-items: center;
+
+  svg {
+    margin-right: spacing.$spacing-03;
+  }
+}
+
+.actionsContainer {
+  display: flex;
+  align-items: center;
+  gap: spacing.$spacing-02;
+}
+
+.tileContainer {
+  background-color: $ui-02;
+  border-top: 1px solid $ui-03;
+  padding: spacing.$spacing-12 0;
+}
+
+.tile {
+  margin: auto;
+  width: fit-content;
+}
+
+.tileContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.content {
+  @include type.type-style('heading-compact-02');
+
+  color: $text-02;
+  margin-bottom: spacing.$spacing-03;
+}
+
+.helper {
+  @include type.type-style('body-compact-01');
+
+  color: $text-02;
+  margin: 0;
+}
+
+.paginationOverride {
+  border-top: 1px solid $ui-03;
+  margin: 0 spacing.$spacing-05;
+}
+
+@media (max-width: 672px) {
+  .tableContainer {
+    margin: 0 spacing.$spacing-03;
+  }
+
+  .toolbarContent {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: spacing.$spacing-03;
+    height: auto;
+    padding: spacing.$spacing-03 0;
+  }
+
+  .search {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .toggle {
+    margin: 0;
+  }
+
+  .paginationOverride {
+    margin: 0 spacing.$spacing-03;
+  }
+}

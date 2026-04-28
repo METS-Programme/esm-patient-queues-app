@@ -8,10 +8,9 @@ import notesModalComponent from './active-visits/notes/notes-dialog.component';
 import pickPatientEntryQueueComponent from './active-visits/pick-patient-dialog.component';
 import queueScreenComponent from './components/queue-board/queue-board.component';
 import rootComponent from './root.component';
-import homeDashboardComponent from './pages/home.component';
 import triageRoomComponent from './pages/queue-triage-home.component';
 import receptionRoomComponent from './pages/queue-reception-home.component';
-import clinicalRoomComponent from './pages/queue-clinical-room-home.component';
+import clinicalRoomComponent from './pages/queue-clinical-home.component';
 import startVisitFormComponent from './components/visit-form/start-a-visit-form.workspace';
 import startVisitFormButtonComponent from './active-visits/start-visit-form-button.component';
 import checkedInTileComponent from './queue-tiles/checked-in-tile.component';
@@ -46,8 +45,6 @@ export const triageRoom = getSyncLifecycle(triageRoomComponent, options);
 export const receptionRoom = getSyncLifecycle(receptionRoomComponent, options);
 
 export const clinicalRoom = getSyncLifecycle(clinicalRoomComponent, options);
-
-export const homeDashboard = getSyncLifecycle(homeDashboardComponent, options);
 
 // extensions
 

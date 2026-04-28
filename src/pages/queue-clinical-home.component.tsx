@@ -1,36 +1,36 @@
 import React, { useMemo } from 'react';
-import { Tabs, TabPanel, TabList, Tab, TabPanels, Tile } from '@carbon/react';
+import { Tab, TabList, TabPanel, TabPanels, Tabs, Tile } from '@carbon/react';
 import { useTranslation } from 'react-i18next';
 import { useSession, userHasAccess } from '@openmrs/esm-framework';
 
-import ActiveTriageVisitsTable from '../active-visits/queue-patients-triage/queue-triage-table.component';
 import PatientQueueHeader from '../components/patient-queue-header/patient-queue-header.component';
 import QueueSummaryTiles from '../summary-tiles/queue-summary-tiles.component';
-import { APP_PATIENTQUEUE_TRIAGE_DASHBOARD } from '../config/privileges';
+import ActiveClinicalVisitsTable from '../active-visits/queue-patients-clinical/queue-clinical-table.component';
+import { APP_PATIENTQUEUE_CLINICIAN_DASHBOARD } from '../config/privileges';
 import { QueueStatus } from '../utils/utils';
 
-import styles from './queue-triage-home.scss';
+import styles from './queue-clinical-home.scss';
 
-const TriageHome: React.FC = () => {
+const ClinicalRoomHome: React.FC = () => {
   const { t } = useTranslation();
   const session = useSession();
 
   const canViewDashboard = useMemo(() => {
-    return Boolean(session?.user && userHasAccess(APP_PATIENTQUEUE_TRIAGE_DASHBOARD, session.user));
+    return Boolean(session?.user && userHasAccess(APP_PATIENTQUEUE_CLINICIAN_DASHBOARD, session.user));
   }, [session?.user]);
 
   return (
     <main className={styles.page}>
-      <PatientQueueHeader title={t('triage', 'Triage')} />
+      <PatientQueueHeader title={t('clinicalRoom', 'Clinical Room')} />
 
       <QueueSummaryTiles />
 
       {canViewDashboard ? (
-        <section className={styles.container} aria-label={t('triageDashboard', 'Triage dashboard')}>
+        <section className={styles.container} aria-label={t('clinicalDashboard', 'Clinical dashboard')}>
           <Tabs>
             <TabList
               className={styles.tabList}
-              aria-label={t('triageOutpatientTabs', 'Triage outpatient tabs')}
+              aria-label={t('clinicalOutpatientTabs', 'Clinical outpatient tabs')}
               contained
             >
               <Tab className={styles.tab}>{t('pending', 'In Queue')}</Tab>
@@ -39,11 +39,11 @@ const TriageHome: React.FC = () => {
 
             <TabPanels>
               <TabPanel className={styles.tabPanel}>
-                <ActiveTriageVisitsTable status={QueueStatus.Pending} />
+                <ActiveClinicalVisitsTable status={QueueStatus.Pending} />
               </TabPanel>
 
               <TabPanel className={styles.tabPanel}>
-                <ActiveTriageVisitsTable status={QueueStatus.Completed} />
+                <ActiveClinicalVisitsTable status={QueueStatus.Completed} />
               </TabPanel>
             </TabPanels>
           </Tabs>
@@ -52,7 +52,7 @@ const TriageHome: React.FC = () => {
         <Tile className={styles.noAccessTile}>
           <h4 className={styles.noAccessTitle}>{t('accessRestricted', 'Access restricted')}</h4>
           <p className={styles.noAccessMessage}>
-            {t('triageDashboardAccessRestricted', 'You do not have permission to view the triage dashboard.')}
+            {t('clinicalDashboardAccessRestricted', 'You do not have permission to view the clinical dashboard.')}
           </p>
         </Tile>
       )}
@@ -60,4 +60,4 @@ const TriageHome: React.FC = () => {
   );
 };
 
-export default TriageHome;
+export default ClinicalRoomHome;

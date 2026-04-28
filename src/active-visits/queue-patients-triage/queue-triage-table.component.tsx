@@ -1,5 +1,4 @@
-import React, { type AnchorHTMLAttributes, useCallback, useEffect, useMemo, useState } from 'react';
-
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   DataTable,
   DataTableSkeleton,
@@ -13,14 +12,14 @@ import {
   TableRow,
   TableToolbar,
   TableToolbarContent,
+  TableToolbarSearch,
   Tag,
   Tile,
   Toggle,
-  TableToolbarSearch,
 } from '@carbon/react';
-
 import { useTranslation } from 'react-i18next';
-import { useSession, useLayoutType, isDesktop, useConfig } from '@openmrs/esm-framework';
+import { isDesktop, useConfig, useLayoutType, useSession } from '@openmrs/esm-framework';
+
 import { getOriginFromPathName, useParentLocation, usePatientQueuePages } from '../patient-queues.resource';
 import {
   buildStatusString,
@@ -32,82 +31,130 @@ import {
 } from '../../helpers/functions';
 import PickQueuePatientActionMenu from '../pick-queue-patient-action-action.component';
 import NotesActionsMenu from '../notes/notes-action-menu.components';
-import styles from '../active-visits-table.scss';
-import dayjs from 'dayjs';
-import StatusIcon, { QueueStatus } from '../../utils/utils';
-import { type PatientQueueConfig } from '../../config-schema';
 import MovetoNextServicePointReassignAction from '../move-to-next-service-point-re-assign-action.component';
 import ViewQueuePatientActionMenu from '../view-queue-patient-action-menu.component';
+import StatusIcon, { QueueStatus } from '../../utils/utils';
+import { type PatientQueueConfig } from '../../config-schema';
+
+import styles from './queue-triage-table.scss';
 
 interface ActiveVisitsTableProps {
   status: string;
 }
 
-export interface PatientQueueInfoProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
-  patientUuid: string;
-  patientName: string;
-}
+type QueueEntry = {
+  uuid: string;
+  visitNumber?: string;
+  status?: string;
+  dateCreated?: string;
+  patient?: {
+    uuid: string;
+    person?: {
+      display?: string;
+    };
+  };
+  provider?: {
+    identifier?: string;
+    display?: string;
+  };
+  locationTo?: {
+    display?: string;
+  };
+  queueRoom?: {
+    tags?: Array<{
+      uuid: string;
+    }>;
+  };
+};
+
+const REFRESH_WAIT_TIME_INTERVAL_MS = 60_000;
+
+const getVisibleStatusMatcher = (status: string) => {
+  switch (status) {
+    case QueueStatus.Completed:
+      return (entry: QueueEntry) => entry.status === 'COMPLETED';
+
+    case QueueStatus.Pending:
+      return (entry: QueueEntry) => entry.status === 'PENDING' || entry.status === 'PICKED';
+
+    default:
+      return (entry: QueueEntry) => entry.status === status;
+  }
+};
 
 const ActiveTriageVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status }) => {
   const { t } = useTranslation();
   const session = useSession();
   const layout = useLayoutType();
-
   const { triageRoomTag } = useConfig<PatientQueueConfig>();
+
   const [tick, setTick] = useState(0);
-
-  const [isToggled, setIsToggled] = useState(false);
+  const [showAllLocations, setShowAllLocations] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const handleToggleChange = () => {
-    setIsToggled(!isToggled);
-  };
-  const { location } = useParentLocation(session?.sessionLocation?.uuid);
 
-  const activeLocationUuid = isToggled ? location?.parentLocation?.uuid : session?.sessionLocation?.uuid;
+  const sessionLocationUuid = session?.sessionLocation?.uuid ?? '';
+  const sessionUserSystemId = session?.user?.systemId;
 
-  const currentPathName: string = window.location.pathname;
+  const { location } = useParentLocation(sessionLocationUuid);
 
-  const fromPage: string = getOriginFromPathName(currentPathName);
+  const activeLocationUuid = showAllLocations
+    ? (location?.parentLocation?.uuid ?? sessionLocationUuid)
+    : sessionLocationUuid;
 
-  const handleSearchInputChange = useCallback((event) => {
-    const searchText = event?.target?.value?.trim().toLowerCase();
-    setSearchTerm(searchText);
+  const fromPage = useMemo(() => {
+    return getOriginFromPathName(window.location.pathname);
   }, []);
 
-  const { isLoading, items, totalCount, currentPageSize, setPageSize, pageSizes, currentPage, setCurrentPage } =
-    usePatientQueuePages(activeLocationUuid, status, isToggled, false);
+  const {
+    isLoading,
+    items = [],
+    totalCount = 0,
+    currentPageSize,
+    setPageSize,
+    pageSizes,
+    currentPage,
+    setCurrentPage,
+  } = usePatientQueuePages(activeLocationUuid, status, showAllLocations, false);
+
+  const handleToggleChange = useCallback((checked: boolean) => {
+    setShowAllLocations(checked);
+  }, []);
+
+  const handleSearchInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+  }, []);
+
+  const normalizedSearchTerm = useMemo(() => {
+    return searchTerm.trim().toLowerCase();
+  }, [searchTerm]);
 
   const tableHeaders = useMemo(
     () => [
       {
-        id: 0,
         header: t('visitNumber', 'Visit Number'),
         key: 'visitNumber',
       },
       {
-        id: 1,
         header: t('name', 'Name'),
         key: 'name',
       },
       {
-        id: 2,
         header: t('provider', 'Provider'),
         key: 'provider',
       },
-      { id: 3, header: t('currentlocation', 'Current Location'), key: 'location' },
-
       {
-        id: 4,
+        header: t('currentlocation', 'Current Location'),
+        key: 'location',
+      },
+      {
         header: t('status', 'Status'),
         key: 'status',
       },
       {
-        id: 5,
         header: t('waitTime', 'Wait time'),
         key: 'waitTime',
       },
       {
-        id: 6,
         header: t('actions', 'Actions'),
         key: 'actions',
       },
@@ -115,120 +162,161 @@ const ActiveTriageVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status }) =
     [t],
   );
 
+  const visibleHeaders = useMemo(() => {
+    return tableHeaders.filter((header) => showAllLocations || header.key !== 'provider');
+  }, [showAllLocations, tableHeaders]);
+
   const filteredPatientQueueEntries = useMemo(() => {
-    let entries = items;
+    const matchesStatus = getVisibleStatusMatcher(status);
 
-    switch (status) {
-      case QueueStatus.Completed:
-        entries = items.filter((entry) => entry.status === 'COMPLETED');
-        break;
-      case QueueStatus.Pending:
-        entries = items.filter((entry) => entry.status === 'PENDING' || entry.status === 'PICKED');
-        break;
-      default:
-        entries = items.filter((entry) => entry.status === status);
-        break;
-    }
+    return [...items]
+      .filter(matchesStatus)
+      .filter((entry) => {
+        if (!triageRoomTag) {
+          return true;
+        }
 
-    if (searchTerm) {
-      const lowercasedTerm = searchTerm.toLowerCase();
-      entries = entries.filter((entry) => entry.patient?.person?.display?.toLowerCase().includes(lowercasedTerm));
-    }
+        return entry?.queueRoom?.tags?.some((tag) => tag.uuid === triageRoomTag);
+      })
+      .filter((entry) => {
+        if (!normalizedSearchTerm) {
+          return true;
+        }
 
-    // Correct filtering for queueRoom tags
-    entries = entries.filter((entry) => entry?.queueRoom?.tags?.some((item) => item.uuid === triageRoomTag));
+        const patientName = entry.patient?.person?.display?.toLowerCase() ?? '';
+        const visitNumber = entry.visitNumber?.toLowerCase() ?? '';
+        const providerName = entry.provider?.display?.toLowerCase() ?? '';
 
-    entries.sort((a, b) => {
-      if (a.status === 'PICKED' && b.status !== 'PICKED') return -1;
-      if (a.status !== 'PICKED' && b.status === 'PICKED') return 1;
-      return new Date(a.dateCreated).getTime() - new Date(b.dateCreated).getTime();
-    });
+        return (
+          patientName.includes(normalizedSearchTerm) ||
+          visitNumber.includes(normalizedSearchTerm) ||
+          providerName.includes(normalizedSearchTerm)
+        );
+      })
+      .sort((a, b) => {
+        const aIsPicked = a.status === 'PICKED';
+        const bIsPicked = b.status === 'PICKED';
 
-    return entries;
-  }, [items, status, searchTerm, triageRoomTag]);
+        if (aIsPicked && !bIsPicked) {
+          return -1;
+        }
+
+        if (!aIsPicked && bIsPicked) {
+          return 1;
+        }
+
+        return new Date(a.dateCreated ?? 0).getTime() - new Date(b.dateCreated ?? 0).getTime();
+      });
+  }, [items, normalizedSearchTerm, status, triageRoomTag]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTick((prev) => prev + 1);
-    }, 60000);
+    const intervalId = window.setInterval(() => {
+      setTick((previousTick) => previousTick + 1);
+    }, REFRESH_WAIT_TIME_INTERVAL_MS);
 
-    return () => clearInterval(interval);
+    return () => window.clearInterval(intervalId);
   }, []);
 
   const tableRows = useMemo(() => {
-    return filteredPatientQueueEntries.map((patientqueue, index) => ({
-      ...patientqueue,
-      id: patientqueue.uuid,
-      visitNumber: {
-        content: <span>{trimVisitNumber(patientqueue.visitNumber)}</span>,
-      },
-      name: {
-        content: patientqueue?.patient?.person?.display,
-      },
-      provider: {
-        content: (
-          <Tag>
-            <span
-              style={{ color: `${getProviderTagColor(patientqueue?.provider?.identifier, session?.user?.systemId)}` }}
-            >
-              {patientqueue?.provider?.display}
+    return filteredPatientQueueEntries.map((queueEntry) => {
+      const waitTimeInMinutes = getWaitTimeInMinutes(queueEntry);
+      const normalizedStatus = queueEntry.status?.toLowerCase() ?? '';
+
+      return {
+        ...queueEntry,
+        id: queueEntry.uuid,
+
+        visitNumber: {
+          content: <span>{trimVisitNumber(queueEntry.visitNumber ?? '') || '—'}</span>,
+        },
+
+        name: {
+          content: queueEntry.patient?.person?.display ?? '—',
+        },
+
+        provider: {
+          content: (
+            <Tag>
+              <span
+                style={{
+                  color: getProviderTagColor(queueEntry.provider?.identifier, sessionUserSystemId ?? ''),
+                }}
+              >
+                {queueEntry.provider?.display ?? t('unassigned', 'Unassigned')}
+              </span>
+            </Tag>
+          ),
+        },
+
+        location: {
+          content: <span>{queueEntry.locationTo?.display ?? '—'}</span>,
+        },
+
+        status: {
+          content: (
+            <span className={styles.statusContainer}>
+              <StatusIcon status={normalizedStatus} />
+              <span>{buildStatusString(normalizedStatus)}</span>
             </span>
-          </Tag>
-        ),
-      },
-      location: { content: <span>{patientqueue?.locationTo?.display}</span> },
+          ),
+        },
 
-      status: {
-        content: (
-          <span className={styles.statusContainer}>
-            <StatusIcon status={patientqueue?.status.toLowerCase()} />
-            <span>{buildStatusString(patientqueue?.status.toLowerCase())}</span>
-          </span>
-        ),
-      },
-      waitTime: {
-        content: (() => {
-          const minutes = getWaitTimeInMinutes(patientqueue);
-
-          return (
+        waitTime: {
+          content: (
             <Tag>
               <span
                 className={styles.statusContainer}
                 style={{
-                  color: getTagColor((minutes ?? 0).toString()),
+                  color: getTagColor((waitTimeInMinutes ?? 0).toString()),
                 }}
               >
-                {formatWaitTime(minutes, t)}
+                {formatWaitTime(waitTimeInMinutes, t)}
               </span>
             </Tag>
-          );
-        })(),
-      },
-      actions: {
-        content: (
-          <div style={{ display: 'flex' }}>
-            {patientqueue?.status === 'PENDING' && (
-              <PickQueuePatientActionMenu queueEntry={patientqueue} closeModal={() => true} />
-            )}
+          ),
+        },
 
-            {(patientqueue?.status === 'COMPLETED' || patientqueue?.status === 'PICKED') && (
-              <ViewQueuePatientActionMenu
-                to={`\${openmrsSpaBase}/patient/${patientqueue?.patient?.uuid}/chart`}
-                from={fromPage}
-                queueUuid={filteredPatientQueueEntries[index].uuid}
-              />
-            )}
+        actions: {
+          content: (
+            <div className={styles.actionsContainer}>
+              {queueEntry.status === 'PENDING' && (
+                <PickQueuePatientActionMenu queueEntry={queueEntry} closeModal={() => true} />
+              )}
 
-            <NotesActionsMenu note={patientqueue} />
+              {(queueEntry.status === 'COMPLETED' || queueEntry.status === 'PICKED') && (
+                <ViewQueuePatientActionMenu
+                  to={`${window.getOpenmrsSpaBase?.() ?? '/openmrs/spa'}/patient/${queueEntry.patient?.uuid}/chart`}
+                  from={fromPage ?? ''}
+                  queueUuid={queueEntry.uuid}
+                />
+              )}
 
-            {patientqueue?.status === 'PENDING' && isToggled && (
-              <MovetoNextServicePointReassignAction patientUuid={filteredPatientQueueEntries[index].patient.uuid} />
-            )}
-          </div>
-        ),
-      },
-    }));
-  }, [filteredPatientQueueEntries, session.user, t, fromPage, isToggled]);
+              <NotesActionsMenu note={queueEntry} />
+
+              {queueEntry.status === 'PENDING' && showAllLocations && queueEntry.patient?.uuid && (
+                <MovetoNextServicePointReassignAction patientUuid={queueEntry.patient.uuid} />
+              )}
+            </div>
+          ),
+        },
+      };
+    });
+
+    /**
+     * tick intentionally refreshes wait-time rendering every minute.
+     */
+  }, [filteredPatientQueueEntries, fromPage, sessionUserSystemId, showAllLocations, t]);
+
+  const renderEmptyState = () => (
+    <div className={styles.tileContainer}>
+      <Tile className={styles.tile}>
+        <div className={styles.tileContent}>
+          <p className={styles.content}>{t('noPatientsToDisplay', 'No patients to display')}</p>
+          <p className={styles.helper}>{t('checkFilters', 'Check the filters above')}</p>
+        </div>
+      </Tile>
+    </div>
+  );
 
   if (isLoading) {
     return <DataTableSkeleton role="progressbar" />;
@@ -238,92 +326,73 @@ const ActiveTriageVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status }) =
     <div className={styles.container}>
       <DataTable
         data-floating-menu-container
-        headers={tableHeaders}
+        headers={visibleHeaders}
         overflowMenuOnHover={isDesktop(layout)}
         rows={tableRows}
         useZebraStyles
       >
-        {({ rows, headers, getHeaderProps, getTableProps, getRowProps }) => (
+        {({ rows, headers, getHeaderProps, getTableProps }) => (
           <TableContainer className={styles.tableContainer}>
-            <TableToolbar
-              style={{
-                position: 'static',
-                overflow: 'visible',
-                backgroundColor: 'color',
-              }}
-            >
-              <TableToolbarContent
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
+            <TableToolbar className={styles.tableToolbar}>
+              <TableToolbarContent className={styles.toolbarContent}>
                 <TableToolbarSearch
                   expanded
                   className={styles.search}
-                  onChange={handleSearchInputChange}
+                  onChange={() => handleSearchInputChange}
                   placeholder={t('searchThisList', 'Search this list')}
                   size="sm"
+                  value={searchTerm}
                 />
+
                 <Toggle
                   className={styles.toggle}
-                  labelA="My Location"
-                  labelB="All Locations"
                   id="all-queue-locations-toggle"
-                  toggled={isToggled}
+                  labelA={t('myLocation', 'My Location')}
+                  labelB={t('allLocations', 'All Locations')}
+                  toggled={showAllLocations}
                   onToggle={handleToggleChange}
                 />
               </TableToolbarContent>
             </TableToolbar>
+
             <Table {...getTableProps()} className={styles.activeVisitsTable}>
               <TableHead>
                 <TableRow>
-                  {headers
-                    .filter((header) => isToggled || header.key !== 'provider')
-                    .map((header) => (
-                      <TableHeader key={header.key} {...getHeaderProps({ header })}>
-                        {header.header}
-                      </TableHeader>
-                    ))}
+                  {headers.map((header) => (
+                    <TableHeader {...getHeaderProps({ header })}>{header.header}</TableHeader>
+                  ))}
                 </TableRow>
               </TableHead>
+
               <TableBody>
                 {rows.map((row) => (
                   <TableRow key={row.id}>
-                    {row.cells
-                      .filter((cell, index) => isToggled || headers[index]?.key !== 'provider')
-                      .map((cell) => (
-                        <TableCell key={cell.id}>{cell.value?.content ?? cell.value}</TableCell>
-                      ))}
+                    {row.cells.map((cell) => (
+                      <TableCell key={cell.id}>{cell.value?.content ?? cell.value}</TableCell>
+                    ))}
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-            {rows.length === 0 ? (
-              <div className={styles.tileContainer}>
-                <Tile className={styles.tile}>
-                  <div className={styles.tileContent}>
-                    <p className={styles.content}>{t('noPatientsToDisplay', 'No patients to display')}</p>
-                    <p className={styles.helper}>{t('checkFilters', 'Check the filters above')}</p>
-                  </div>
-                </Tile>
-              </div>
-            ) : null}
+
+            {rows.length === 0 ? renderEmptyState() : null}
           </TableContainer>
         )}
       </DataTable>
+
       <Pagination
+        className={styles.paginationOverride}
         page={currentPage}
         pageSize={currentPageSize}
         pageSizes={pageSizes}
-        totalItems={totalCount}
+        totalItems={totalCount ?? 0}
         onChange={({ page, pageSize }) => {
           setCurrentPage(page);
           setPageSize(pageSize);
         }}
-        className={styles.paginationOverride}
       />
     </div>
   );
 };
+
 export default ActiveTriageVisitsTable;

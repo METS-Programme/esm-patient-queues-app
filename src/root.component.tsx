@@ -4,7 +4,7 @@ import { SWRConfig } from 'swr';
 import QueueBoardComponent from './components/queue-board/queue-board.component';
 import TriageHome from './pages/queue-triage-home.component';
 import ReceptionHome from './pages/queue-reception-home.component';
-import ClinicalRoomHome from './pages/queue-clinical-room-home.component';
+import ClinicalRoomHome from './pages/queue-clinical-home.component';
 
 const swrConfiguration = {
   errorRetryCount: 3,

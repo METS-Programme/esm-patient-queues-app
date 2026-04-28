@@ -1,0 +1,55 @@
+@use '@carbon/styles/scss/spacing';
+@use '@carbon/styles/scss/type';
+@use '@openmrs/esm-styleguide/src/vars' as *;
+
+.page {
+  background-color: $ui-background;
+  min-height: 100%;
+}
+
+.container {
+  background-color: $ui-background;
+
+  :global(.cds--tabs.cds--tabs--contained .cds--tabs__nav-item--selected) {
+    background-color: transparent;
+    border-left: 1px solid $ui-03;
+    border-right: 1px solid $ui-03;
+  }
+
+  :global(.cds--tab-content) {
+    padding: 0;
+  }
+}
+
+.tabList {
+  padding-left: spacing.$spacing-05;
+}
+
+.tab {
+  width: 9.375rem;
+}
+
+.tabPanel {
+  padding: 0;
+}
+
+.noAccessTile {
+  margin: spacing.$spacing-05;
+  padding: spacing.$spacing-06;
+  border: 1px solid $ui-03;
+  background-color: $ui-01;
+}
+
+.noAccessTitle {
+  @include type.type-style('heading-compact-02');
+
+  color: $text-02;
+  margin: 0 0 spacing.$spacing-03;
+}
+
+.noAccessMessage {
+  @include type.type-style('body-compact-01');
+
+  color: $text-02;
+  margin: 0;
+}
