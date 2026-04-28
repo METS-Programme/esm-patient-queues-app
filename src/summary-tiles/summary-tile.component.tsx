@@ -1,60 +1,90 @@
 import React from 'react';
-import { Tile, Layer } from '@carbon/react';
+import { Layer, Tile } from '@carbon/react';
+
 import styles from './summary-tile.scss';
 
-interface Status {
-  status: any;
-  value: number;
-  color: string;
-}
-export interface Value {
+export type SummaryStatusColor = 'orange' | 'green' | 'blue' | 'red' | 'gray';
+
+export interface SummaryStatus {
   label: string;
-  value: number;
-  status?: Array<Status>;
+  value: number | string;
+  color?: SummaryStatusColor;
+}
+
+export interface SummaryTileValue {
+  label: string;
+  value: number | string;
+  status?: SummaryStatus[];
 }
 
 interface SummaryTileProps {
-  values: Array<Value>;
+  values?: SummaryTileValue[];
   headerLabel: string;
+  emptyText?: string;
+  className?: string;
 }
 
-const SummaryTile: React.FC<SummaryTileProps> = ({ values, headerLabel }) => {
+const statusColorClassMap: Record<SummaryStatusColor, string> = {
+  orange: styles.statusOrange,
+  green: styles.statusGreen,
+  blue: styles.statusBlue,
+  red: styles.statusRed,
+  gray: styles.statusGray,
+};
+
+function getStatusColorClass(color?: SummaryStatusColor) {
+  if (!color) {
+    return styles.statusBlue;
+  }
+
+  return statusColorClassMap[color] ?? styles.statusBlue;
+}
+
+export const SummaryTile: React.FC<SummaryTileProps> = ({
+  values = [],
+  headerLabel,
+  emptyText = 'No summary data available',
+  className,
+}) => {
+  const hasValues = values.length > 0;
+
   return (
-    <Layer className={`${styles.cardWithChildren} ${styles.container}`}>
+    <Layer className={`${styles.container} ${className ?? ''}`}>
       <Tile className={styles.tileContainer}>
         <div className={styles.tileHeader}>
           <div className={styles.headerLabelContainer}>
-            <label className={styles.headerLabel}>{headerLabel}</label>
+            <h3 className={styles.headerLabel}>{headerLabel}</h3>
           </div>
         </div>
-        <div className={styles.valueContainer}>
-          {values?.map((value) => (
-            <div className={styles.valueInnerContainer}>
-              <div key={value.label}>
-                <label className={styles.totalsLabel}>{value.label}</label>
-                <p className={styles.totalsValue}>{value.value}</p>
-              </div>
-              <div className={styles.valueStatus}>
-                {value?.status?.map((status, index) => (
-                  <div key={index} className={styles.status}>
-                    <p className={styles.statusValue}>{status.value}</p>
-                    <label
-                      className={`${styles.statusLabel} ${
-                        status.color === 'orange'
-                          ? styles.statusOrange
-                          : status.color === 'green'
-                            ? styles.statusGreen
-                            : styles.statusBlue
-                      }`}
-                    >
-                      {status.status}
-                    </label>
+
+        {!hasValues ? (
+          <p className={styles.emptyText}>{emptyText}</p>
+        ) : (
+          <div className={styles.valueContainer}>
+            {values.map((item) => (
+              <div key={item.label} className={styles.valueInnerContainer}>
+                <div className={styles.valueSummary}>
+                  <p className={styles.totalsLabel}>{item.label}</p>
+                  <p className={styles.totalsValue}>{item.value}</p>
+                </div>
+
+                {item.status && item.status.length > 0 && (
+                  <div className={styles.valueStatus}>
+                    {item.status.map((status) => (
+                      <div key={`${item.label}-${status.label}`} className={styles.status}>
+                        <span className={styles.statusValue}>{status.value}</span>
+
+                        <span className={`${styles.statusLabel} ${getStatusColorClass(status.color)}`}>
+                          {status.label}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </Tile>
     </Layer>
   );

@@ -3,16 +3,31 @@
 @use '@openmrs/esm-styleguide/src/vars' as *;
 
 .cardContainer {
-  background-color: $ui-02 ;
-  display: flex;
+  background-color: $ui-02;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: spacing.$spacing-03;
+  width: 100%;
   padding: 0 spacing.$spacing-05 1.7rem spacing.$spacing-03;
 }
 
-.cardContainer>div:nth-child(1),
-.cardContainer>div:nth-child(2),
-.cardContainer>div:nth-child(3),
-.cardContainer>div:nth-child(4),
-.cardContainer>div:nth-child(5),
-{
-width: 20%;
+.cardContainer>div {
+  min-width: 0;
+  width: 100%;
+}
+
+/* Tablet */
+:global(.omrs-breakpoint-lt-desktop) {
+  .cardContainer {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-right: spacing.$spacing-03;
+  }
+}
+
+/* Mobile */
+@media (max-width: 672px) {
+  .cardContainer {
+    grid-template-columns: 1fr;
+    padding: spacing.$spacing-03;
+  }
 }

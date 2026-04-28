@@ -1,36 +1,40 @@
-import React from 'react';
-import styles from './queue-summary-tiles.scss';
-import { type AssignedExtension, useConnectedExtensions, Extension } from '@openmrs/esm-framework';
+import React, { useMemo } from 'react';
+import { Extension, type AssignedExtension, useConnectedExtensions } from '@openmrs/esm-framework';
 import { ComponentContext } from '@openmrs/esm-framework/src/internal';
 
-const QueueSummaryTiles: React.FC = () => {
-  const queueTileSlot = 'queue-tiles-slot';
+import styles from './queue-summary-tiles.scss';
 
-  const tilesExtensions = useConnectedExtensions(queueTileSlot) as AssignedExtension[];
+const QUEUE_TILE_SLOT = 'queue-tiles-slot';
+
+const QueueSummaryTiles: React.FC = () => {
+  const tileExtensions = useConnectedExtensions(QUEUE_TILE_SLOT) as AssignedExtension[];
+
+  const validExtensions = useMemo(() => tileExtensions.filter((extension) => extension?.id), [tileExtensions]);
+
+  if (!validExtensions.length) {
+    return null;
+  }
 
   return (
-    <div className={styles.cardContainer}>
-      {tilesExtensions
-        .filter((extension) => Object.keys(extension).length > 0)
-        .map((extension, index) => {
-          return (
-            <ComponentContext.Provider
-              key={extension.id}
-              value={{
-                featureName: 'QueueTiles',
-                moduleName: extension.moduleName,
-                extension: {
-                  extensionId: extension.id,
-                  extensionSlotName: queueTileSlot,
-                  extensionSlotModuleName: extension.moduleName,
-                },
-              }}
-            >
-              <Extension />
-            </ComponentContext.Provider>
-          );
-        })}
-    </div>
+    <section className={styles.cardContainer} aria-label="Queue summary tiles">
+      {validExtensions.map((extension) => (
+        <div key={extension.id} className={styles.tileWrapper}>
+          <ComponentContext.Provider
+            value={{
+              featureName: 'QueueTiles',
+              moduleName: extension.moduleName,
+              extension: {
+                extensionId: extension.id,
+                extensionSlotName: QUEUE_TILE_SLOT,
+                extensionSlotModuleName: extension.moduleName,
+              },
+            }}
+          >
+            <Extension />
+          </ComponentContext.Provider>
+        </div>
+      ))}
+    </section>
   );
 };
 

@@ -3,75 +3,19 @@
 @use '@carbon/styles/scss/colors';
 @use '@openmrs/esm-styleguide/src/vars' as *;
 
-.tileContainer {
-  border: 0.0625rem solid $ui-03;
-  flex-grow: 1;
-  height: 7.875rem;
-  padding: 0 spacing.$spacing-05;
-  margin: spacing.$spacing-03 spacing.$spacing-03;
-}
-
-.tileHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: spacing.$spacing-03;
-}
-
-.headerLabel {
-  @include type.type-style("heading-01");
-  color: $text-02;
-}
-
-.totalsLabel {
-  @include type.type-style("label-01");
-  color: $text-02;
-}
-
-.totalsValue {
-  @include type.type-style("heading-04");
-  color: $ui-05;
-}
-
-.headerLabelContainer {
-  display: flex;
-  align-items: center;
-  height: spacing.$spacing-07;
-}
-
-.arrowIcon {
-  fill: var(--cds-link-primary, #0f62fe) !important;
-}
-
-.kpis {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-}
-
-
-.kpis>div {
-  text-align: left;
-}
-
 .container {
   flex-grow: 1;
-}
-
-/* Tablet viewport */
-:global(.omrs-breakpoint-lt-desktop) {
-
-  // The card containing the dropdown element should be the first to overflow on tablet
-  .cardWithChildren {
-    order: 3;
-  }
+  min-width: 0;
 }
 
 .tileContainer {
   border: 0.0625rem solid $ui-03;
-  height: 10.875rem;
+  min-height: 10.875rem;
+  height: 100%;
   padding: spacing.$spacing-05;
-  margin: spacing.$spacing-03 spacing.$spacing-03;
+  margin: spacing.$spacing-03;
+  display: flex;
+  flex-direction: column;
 }
 
 .tileHeader {
@@ -81,25 +25,10 @@
   margin-bottom: spacing.$spacing-03;
 }
 
-.headerLabel {
-  @include type.type-style('heading-compact-01');
-  color: $text-02;
-}
-
-.totalsLabel {
-  font-weight: bold !important;
-  @include type.type-style('label-01');
-  color: $text-02;
-}
-
-.totalsValue {
-  @include type.type-style('heading-04');
-  color: $ui-05;
-}
-
 .headerLabelContainer {
   display: flex;
-  height: spacing.$spacing-07;
+  align-items: center;
+  min-height: spacing.$spacing-07;
 
   :global(.cds--dropdown__wrapper--inline) {
     gap: 0;
@@ -109,6 +38,103 @@
   :global(.cds--list-box__menu-icon) {
     height: 1rem;
   }
+}
+
+.headerLabel {
+  @include type.type-style('heading-compact-01');
+
+  color: $text-02;
+  margin: 0;
+}
+
+.valueContainer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: spacing.$spacing-05;
+  flex-wrap: wrap;
+}
+
+.valueInnerContainer {
+  display: flex;
+  align-items: flex-start;
+  gap: spacing.$spacing-04;
+  min-width: 0;
+}
+
+.valueSummary {
+  min-width: 0;
+}
+
+.totalsLabel {
+  @include type.type-style('label-01');
+
+  color: $text-02;
+  font-weight: 600;
+  margin: 0 0 spacing.$spacing-02;
+}
+
+.totalsValue {
+  @include type.type-style('heading-04');
+
+  color: $ui-05;
+  margin: 0;
+}
+
+.valueStatus {
+  display: flex;
+  flex-direction: column;
+  gap: spacing.$spacing-02;
+  padding-left: spacing.$spacing-03;
+  border-left: 0.0625rem solid $ui-03;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: spacing.$spacing-02;
+  white-space: nowrap;
+}
+
+.statusValue {
+  @include type.type-style('label-01');
+
+  color: $text-02;
+  margin: 0;
+}
+
+.statusLabel {
+  @include type.type-style('label-01');
+
+  margin: 0;
+  font-weight: 600;
+}
+
+.statusOrange {
+  color: colors.$orange-50;
+}
+
+.statusGreen {
+  color: colors.$green-50;
+}
+
+.statusBlue {
+  color: colors.$blue-50;
+}
+
+.statusRed {
+  color: colors.$red-50;
+}
+
+.statusGray {
+  color: colors.$gray-60;
+}
+
+.emptyText {
+  @include type.type-style('body-compact-01');
+
+  color: $text-02;
+  margin: spacing.$spacing-03 0 0;
 }
 
 .link {
@@ -122,44 +148,44 @@
   }
 }
 
-.valueContainer {
+.arrowIcon {
+  fill: var(--cds-link-primary, #0f62fe) !important;
+}
+
+.kpis {
   display: flex;
-  align-items: center;
+  flex-direction: row;
   justify-content: space-between;
+  gap: spacing.$spacing-05;
 }
 
-.valueInnerContainer {
-  display: flex;
+.kpis>div {
+  text-align: left;
 }
 
-.valueStatus {
-  padding-left: 0.5rem;
+/* Tablet viewport */
+:global(.omrs-breakpoint-lt-desktop) {
+  .container {
+    order: 3;
+  }
+
+  .valueContainer {
+    gap: spacing.$spacing-04;
+  }
 }
 
-.status {
-  display: flex;
-  align-items: start;
-  margin-right: 10px;
-}
+/* Small screens */
+@media (max-width: 672px) {
+  .tileContainer {
+    min-height: auto;
+  }
 
-.statusValue {
-  margin: 0 5px 0 0;
-  font-size: 0.8em;
-}
+  .valueContainer {
+    flex-direction: column;
+  }
 
-.statusLabel {
-  margin: 0;
-  font-size: 0.8em;
-}
-
-.statusOrange {
-  color: colors.$orange-30;
-}
-
-.statusGreen {
-  color: colors.$green-50;
-}
-
-.statusBlue {
-  color: colors.$blue-30;
+  .valueInnerContainer {
+    width: 100%;
+    justify-content: space-between;
+  }
 }
