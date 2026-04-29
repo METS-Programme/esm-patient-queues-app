@@ -10,8 +10,6 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  TableToolbar,
-  TableToolbarContent,
   TableToolbarSearch,
   Tag,
   Tile,
@@ -35,7 +33,6 @@ import {
 } from '../helpers/functions';
 import StatusIcon from '../utils/utils';
 import EditActionsMenu from '../active-visits/action-buttons/edit-action-menu.components';
-import PrintActionsMenu from '../active-visits/action-buttons/print-action-menu.components';
 import CheckInLauncher from '../components/check-in/check-in.component';
 import PatientQueueHeader from '../components/patient-queue-header/patient-queue-header.component';
 import QueueLauncher from '../components/queue-launcher/queue-launcher.component';
@@ -184,7 +181,7 @@ const ReceptionHome: React.FC = () => {
 
   const tableRows = useMemo(() => {
     return filteredPatientQueueEntries.map((queueEntry: QueueEntry) => {
-      const normalizedStatus = (queueEntry.status?.toLowerCase() ?? 'pending') as 'pending' | 'picked' | 'completed';
+      const normalizedStatus = queueEntry.status?.toLowerCase() ?? 'pending';
       const waitTimeInMinutes = getWaitTimeInMinutes(queueEntry);
 
       return {
@@ -192,11 +189,11 @@ const ReceptionHome: React.FC = () => {
         id: queueEntry.uuid,
 
         visitNumber: {
-          content: <span>{trimVisitNumber(queueEntry.visitNumber ?? '') || '—'}</span>,
+          content: <span className={styles.visitNumber}>{trimVisitNumber(queueEntry.visitNumber ?? '') || '—'}</span>,
         },
 
         name: {
-          content: <span>{queueEntry.patient?.person?.display ?? '—'}</span>,
+          content: <span className={styles.patientName}>{queueEntry.patient?.person?.display ?? '—'}</span>,
         },
 
         location: {
@@ -214,7 +211,7 @@ const ReceptionHome: React.FC = () => {
 
         waitTime: {
           content: (
-            <Tag>
+            <Tag type="blue">
               <span
                 className={styles.statusContainer}
                 style={{
@@ -230,18 +227,12 @@ const ReceptionHome: React.FC = () => {
         actions: {
           content: (
             <div className={styles.actionsContainer}>
-              <EditActionsMenu to={getOpenmrsPatientEditUrl(queueEntry.patient?.uuid)} from={fromPage ?? ''} />
-
-              {/* <PrintActionsMenu patient={queueEntry} /> */}
+              <EditActionsMenu to={getOpenmrsPatientEditUrl(queueEntry.patient?.uuid)} from={fromPage} />
             </div>
           ),
         },
       };
     });
-
-    /**
-     * waitTimeRefreshTick intentionally refreshes wait-time rendering every minute.
-     */
   }, [filteredPatientQueueEntries, fromPage, t]);
 
   const renderEmptyState = () => (
@@ -249,14 +240,21 @@ const ReceptionHome: React.FC = () => {
       <Tile className={styles.tile}>
         <div className={styles.tileContent}>
           <p className={styles.content}>{t('noPatientsToDisplay', 'No patients to display')}</p>
-          <p className={styles.helper}>{t('checkFilters', 'Check the filters above')}</p>
+          <p className={styles.helper}>{t('checkFilters', 'Try changing the filters or search term')}</p>
         </div>
       </Tile>
     </div>
   );
 
   if (isLoading) {
-    return <DataTableSkeleton role="progressbar" />;
+    return (
+      <main className={styles.page}>
+        <PatientQueueHeader title={t('reception', 'Reception')} />
+        <div className={styles.tableShell}>
+          <DataTableSkeleton role="progressbar" />
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -278,30 +276,40 @@ const ReceptionHome: React.FC = () => {
           </div>
         </div>
 
+        <div className={styles.tableControls}>
+          <div className={styles.tableTitleGroup}>
+            <h4 className={styles.tableTitle}>{t('checkedInPatients', 'Checked in patients')}</h4>
+
+            <p className={styles.tableSubtitle}>
+              {t('patientsCount', '{{count}} patient(s)', {
+                count: filteredPatientQueueEntries.length,
+              })}
+            </p>
+          </div>
+
+          <div className={styles.tableActions}>
+            <TableToolbarSearch
+              expanded
+              className={styles.search}
+              onChange={() => handleSearchInputChange}
+              placeholder={t('searchThisList', 'Search this list')}
+              size="sm"
+              value={searchTerm}
+            />
+          </div>
+        </div>
+
         <DataTable data-floating-menu-container headers={tableHeaders} rows={tableRows} useZebraStyles>
-          {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getToolbarProps, getTableContainerProps }) => (
+          {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => (
             <TableContainer className={styles.tableContainer} {...getTableContainerProps()}>
-              <TableToolbar {...getToolbarProps()} className={styles.tableToolbar}>
-                <TableToolbarContent className={styles.toolbarContent}>
-                  <h4 className={styles.tableTitle}>{t('checkedInPatients', 'Checked in patients')}</h4>
-
-                  <TableToolbarSearch
-                    expanded
-                    className={styles.search}
-                    onChange={() => handleSearchInputChange}
-                    placeholder={t('searchThisList', 'Search this list')}
-                    size="sm"
-                    value={searchTerm}
-                  />
-                </TableToolbarContent>
-              </TableToolbar>
-
               <Table {...getTableProps()} className={styles.activeVisitsTable}>
                 <TableHead>
                   <TableRow>
-                    {headers.map((header) => (
-                      <TableHeader {...getHeaderProps({ header })}>{header.header}</TableHeader>
-                    ))}
+                    {headers.map((header) => {
+                      const headerProps = getHeaderProps({ header });
+
+                      return <TableHeader {...headerProps}>{header.header}</TableHeader>;
+                    })}
                   </TableRow>
                 </TableHead>
 

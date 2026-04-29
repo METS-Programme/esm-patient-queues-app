@@ -10,8 +10,6 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  TableToolbar,
-  TableToolbarContent,
   TableToolbarSearch,
   Tag,
   Tile,
@@ -102,7 +100,7 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
   const [showAllLocations, setShowAllLocations] = useState(false);
 
   const sessionLocationUuid = session?.sessionLocation?.uuid ?? '';
-  const sessionUserSystemId = session?.user?.systemId;
+  const sessionUserSystemId = session?.user?.systemId ?? '';
 
   const { location } = useParentLocation(sessionLocationUuid);
 
@@ -137,40 +135,17 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
     setSearchTerm(event.target.value);
   }, []);
 
-  const normalizedSearchTerm = useMemo(() => {
-    return searchTerm.trim().toLowerCase();
-  }, [searchTerm]);
+  const normalizedSearchTerm = useMemo(() => searchTerm.trim().toLowerCase(), [searchTerm]);
 
   const tableHeaders = useMemo(
     () => [
-      {
-        header: t('visitNumber', 'Visit Number'),
-        key: 'visitNumber',
-      },
-      {
-        header: t('name', 'Name'),
-        key: 'name',
-      },
-      {
-        header: t('provider', 'Provider'),
-        key: 'provider',
-      },
-      {
-        header: t('currentlocation', 'Current Location'),
-        key: 'location',
-      },
-      {
-        header: t('status', 'Status'),
-        key: 'status',
-      },
-      {
-        header: t('waitTime', 'Wait time'),
-        key: 'waitTime',
-      },
-      {
-        header: t('actions', 'Actions'),
-        key: 'actions',
-      },
+      { header: t('visitNumber', 'Visit Number'), key: 'visitNumber' },
+      { header: t('name', 'Name'), key: 'name' },
+      { header: t('provider', 'Provider'), key: 'provider' },
+      { header: t('currentlocation', 'Current Location'), key: 'location' },
+      { header: t('status', 'Status'), key: 'status' },
+      { header: t('waitTime', 'Wait time'), key: 'waitTime' },
+      { header: t('actions', 'Actions'), key: 'actions' },
     ],
     [t],
   );
@@ -184,14 +159,14 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
 
     return [...items]
       .filter(matchesStatus)
-      .filter((entry) => {
+      .filter((entry: QueueEntry) => {
         if (!clinicalRoomTag) {
           return true;
         }
 
         return entry.queueRoom?.tags?.some((tag) => tag.uuid === clinicalRoomTag);
       })
-      .filter((entry) => {
+      .filter((entry: QueueEntry) => {
         if (!normalizedSearchTerm) {
           return true;
         }
@@ -200,24 +175,26 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
         const visitNumber = entry.visitNumber?.toLowerCase() ?? '';
         const providerName = entry.provider?.display?.toLowerCase() ?? '';
         const locationName = entry.locationTo?.display?.toLowerCase() ?? '';
+        const statusName = entry.status?.toLowerCase() ?? '';
 
         return (
           patientName.includes(normalizedSearchTerm) ||
           visitNumber.includes(normalizedSearchTerm) ||
           providerName.includes(normalizedSearchTerm) ||
-          locationName.includes(normalizedSearchTerm)
+          locationName.includes(normalizedSearchTerm) ||
+          statusName.includes(normalizedSearchTerm)
         );
       })
-      .sort((a, b) => {
+      .sort((a: QueueEntry, b: QueueEntry) => {
         const aIsPicked = a.status === 'PICKED';
         const bIsPicked = b.status === 'PICKED';
 
         if (aIsPicked && !bIsPicked) {
-          return 1;
+          return -1;
         }
 
         if (!aIsPicked && bIsPicked) {
-          return -1;
+          return 1;
         }
 
         return new Date(a.dateCreated ?? 0).getTime() - new Date(b.dateCreated ?? 0).getTime();
@@ -233,7 +210,7 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
   }, []);
 
   const tableRows = useMemo(() => {
-    return filteredPatientQueueEntries.map((queueEntry) => {
+    return filteredPatientQueueEntries.map((queueEntry: QueueEntry) => {
       const normalizedStatus = queueEntry.status?.toLowerCase() ?? '';
       const waitTimeInMinutes = getWaitTimeInMinutes(queueEntry);
 
@@ -242,19 +219,19 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
         id: queueEntry.uuid,
 
         visitNumber: {
-          content: <span>{trimVisitNumber(queueEntry.visitNumber ?? '') || '—'}</span>,
+          content: <span className={styles.visitNumber}>{trimVisitNumber(queueEntry.visitNumber ?? '') || '—'}</span>,
         },
 
         name: {
-          content: queueEntry.patient?.person?.display ?? '—',
+          content: <span className={styles.patientName}>{queueEntry.patient?.person?.display ?? '—'}</span>,
         },
 
         provider: {
           content: (
-            <Tag>
+            <Tag type="gray">
               <span
                 style={{
-                  color: getProviderTagColor(queueEntry.provider?.identifier, sessionUserSystemId ?? ''),
+                  color: getProviderTagColor(queueEntry.provider?.identifier, sessionUserSystemId),
                 }}
               >
                 {queueEntry.provider?.display ?? t('unassigned', 'Unassigned')}
@@ -278,7 +255,7 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
 
         waitTime: {
           content: (
-            <Tag>
+            <Tag type="blue">
               <span
                 className={styles.statusContainer}
                 style={{
@@ -294,30 +271,26 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
         actions: {
           content: (
             <div className={styles.actionsContainer}>
-              {queueEntry.status === 'PENDING' && (
+              {queueEntry.status === 'PENDING' ? (
                 <PickPatientActionMenu queueEntry={queueEntry} closeModal={() => true} />
-              )}
+              ) : null}
 
-              {(queueEntry.status === 'COMPLETED' || queueEntry.status === 'PICKED') && (
+              {queueEntry.status === 'COMPLETED' || queueEntry.status === 'PICKED' ? (
                 <ViewQueuePatientActionMenu
                   to={getOpenmrsPatientChartUrl(queueEntry.patient?.uuid)}
                   from={fromPage ?? ''}
                   queueUuid={queueEntry.uuid}
                 />
-              )}
+              ) : null}
 
-              {queueEntry.status === 'PENDING' && showAllLocations && queueEntry.patient?.uuid && (
+              {queueEntry.status === 'PENDING' && showAllLocations && queueEntry.patient?.uuid ? (
                 <MovetoNextServicePointReassignAction patientUuid={queueEntry.patient.uuid} />
-              )}
+              ) : null}
             </div>
           ),
         },
       };
     });
-
-    /**
-     * waitTimeRefreshTick intentionally refreshes wait-time rendering every minute.
-     */
   }, [filteredPatientQueueEntries, fromPage, sessionUserSystemId, showAllLocations, t]);
 
   const renderEmptyState = () => (
@@ -325,18 +298,58 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
       <Tile className={styles.tile}>
         <div className={styles.tileContent}>
           <p className={styles.content}>{t('noPatientsToDisplay', 'No patients to display')}</p>
-          <p className={styles.helper}>{t('checkFilters', 'Check the filters above')}</p>
+          <p className={styles.helper}>{t('checkFilters', 'Try changing the filters or search term')}</p>
         </div>
       </Tile>
     </div>
   );
 
   if (isLoading) {
-    return <DataTableSkeleton role="progressbar" />;
+    return (
+      <div className={styles.tableShell}>
+        <DataTableSkeleton role="progressbar" />
+      </div>
+    );
   }
 
   return (
     <div className={styles.container}>
+      <div className={styles.tableControls}>
+        <div className={styles.tableTitleGroup}>
+          <h4 className={styles.tableTitle}>
+            {status === QueueStatus.Completed
+              ? t('completedPatients', 'Completed patients')
+              : t('patientsInQueue', 'Patients in queue')}
+          </h4>
+
+          <p className={styles.tableSubtitle}>
+            {t('patientsCount', '{{count}} patient(s)', {
+              count: filteredPatientQueueEntries.length,
+            })}
+          </p>
+        </div>
+
+        <div className={styles.tableActions}>
+          <TableToolbarSearch
+            expanded
+            className={styles.search}
+            onChange={() => handleSearchInputChange}
+            placeholder={t('searchThisList', 'Search this list')}
+            size="sm"
+            value={searchTerm}
+          />
+
+          <Toggle
+            className={styles.toggle}
+            id={`all-queue-locations-toggle-${status}`}
+            labelA={t('myLocation', 'My Location')}
+            labelB={t('allLocations', 'All Locations')}
+            toggled={showAllLocations}
+            onToggle={handleToggleChange}
+          />
+        </div>
+      </div>
+
       <DataTable
         data-floating-menu-container
         headers={visibleHeaders}
@@ -346,34 +359,14 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
       >
         {({ rows, headers, getHeaderProps, getTableProps }) => (
           <TableContainer className={styles.tableContainer}>
-            <TableToolbar className={styles.tableToolbar}>
-              <TableToolbarContent className={styles.toolbarContent}>
-                <TableToolbarSearch
-                  expanded
-                  className={styles.search}
-                  onChange={(e) => handleSearchInputChange}
-                  placeholder={t('searchThisList', 'Search this list')}
-                  size="sm"
-                  value={searchTerm}
-                />
-
-                <Toggle
-                  className={styles.toggle}
-                  id="all-queue-locations-toggle"
-                  labelA={t('myLocation', 'My Location')}
-                  labelB={t('allLocations', 'All Locations')}
-                  toggled={showAllLocations}
-                  onToggle={handleToggleChange}
-                />
-              </TableToolbarContent>
-            </TableToolbar>
-
             <Table {...getTableProps()} className={styles.activeVisitsTable}>
               <TableHead>
                 <TableRow>
-                  {headers.map((header) => (
-                    <TableHeader {...getHeaderProps({ header })}>{header.header}</TableHeader>
-                  ))}
+                  {headers.map((header) => {
+                    const headerProps = getHeaderProps({ header });
+
+                    return <TableHeader {...headerProps}>{header.header}</TableHeader>;
+                  })}
                 </TableRow>
               </TableHead>
 

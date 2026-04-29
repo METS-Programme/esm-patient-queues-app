@@ -3,60 +3,101 @@
 @use '@openmrs/esm-styleguide/src/vars' as *;
 
 .container {
-  :global(.cds--tabs.cds--tabs--contained .cds--tabs__nav-item--selected) {
-    background-color: transparent;
-    border-left: 1px solid $ui-03;
-    border-right: 1px solid $ui-03;
-  }
+  width: 100%;
+  background-color: $ui-background;
+}
+
+.tableShell {
+  margin: spacing.$spacing-05;
+  border: 1px solid $ui-03;
+  background-color: $ui-01;
+}
+
+.tableControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: spacing.$spacing-05;
+  margin: spacing.$spacing-05 spacing.$spacing-05 0;
+  padding: spacing.$spacing-04 spacing.$spacing-05;
+  border: 1px solid $ui-03;
+  border-bottom: 0;
+  background-color: $ui-01;
+}
+
+.tableTitleGroup {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tableTitle {
+  @include type.type-style('heading-compact-02');
+
+  color: $ui-05;
+  margin: 0;
+}
+
+.tableSubtitle {
+  @include type.type-style('body-compact-01');
+
+  color: $text-02;
+  margin: spacing.$spacing-01 0 0;
+}
+
+.tableActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: spacing.$spacing-05;
+  min-width: 0;
 }
 
 .search {
-  max-width: 16rem;
+  max-width: 18rem;
+  min-width: 16rem;
 
   input {
     background-color: $ui-02 !important;
   }
 }
 
+.toggle {
+  margin: 0;
+  white-space: nowrap;
+}
+
 .tableContainer {
   border: 1px solid $ui-03;
   margin: 0 spacing.$spacing-05;
   padding: 0;
+  background-color: $ui-01;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
 
   a {
     text-decoration: none;
   }
 
   th {
+    @include type.type-style('label-01');
+
     color: $text-02;
+    background-color: $ui-02;
+  }
+
+  td {
+    @include type.type-style('body-compact-01');
+
+    vertical-align: middle;
   }
 
   :global(.cds--data-table) {
-    background-color: $ui-03;
+    background-color: $ui-01;
   }
 
-  :global(.cds--toolbar-search-container-active.cds--search) {
-    margin-right: spacing.$spacing-05;
+  :global(.cds--data-table tbody tr:hover td) {
+    background-color: $ui-02;
   }
-}
-
-.tableToolbar {
-  position: static;
-  overflow: visible;
-  background-color: transparent;
-}
-
-.toolbarContent {
-  display: flex;
-  align-items: center;
-  gap: spacing.$spacing-05;
-  width: 100%;
-  min-height: spacing.$spacing-07;
-  margin-bottom: spacing.$spacing-02;
-}
-
-.toggle {
-  margin: spacing.$spacing-06;
 }
 
 .activeVisitsTable {
@@ -67,32 +108,22 @@
   }
 }
 
-.expandedActiveVisitRow {
-  :global(.cds--tab-content) {
-    padding: spacing.$spacing-03 0;
-  }
+.visitNumber {
+  font-weight: 600;
+}
 
-  td {
-    padding: spacing.$spacing-03;
-
-    >div {
-      max-height: max-content !important;
-      background-color: $ui-02;
-    }
-  }
-
-  th[colspan]>div:first-child,
-  td[colspan]>div:first-child {
-    padding: 0 spacing.$spacing-05;
-  }
+.patientName {
+  font-weight: 600;
+  color: $ui-05;
 }
 
 .statusContainer {
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  gap: spacing.$spacing-02;
 
   svg {
-    margin-right: spacing.$spacing-03;
+    margin-right: 0;
   }
 }
 
@@ -103,26 +134,30 @@
 }
 
 .tileContainer {
-  background-color: $ui-02;
+  background-color: $ui-01;
   border-top: 1px solid $ui-03;
-  padding: spacing.$spacing-12 0;
+  padding: spacing.$spacing-11 0;
 }
 
 .tile {
   margin: auto;
   width: fit-content;
+  max-width: 24rem;
+  border: 1px solid $ui-03;
+  background-color: $ui-02;
 }
 
 .tileContent {
   display: flex;
   flex-direction: column;
   align-items: center;
+  text-align: center;
 }
 
 .content {
   @include type.type-style('heading-compact-02');
 
-  color: $text-02;
+  color: $ui-05;
   margin-bottom: spacing.$spacing-03;
 }
 
@@ -130,28 +165,47 @@
   @include type.type-style('body-compact-01');
 
   color: $text-02;
+  margin: 0;
 }
 
 .paginationOverride {
-  border-top: 1px solid $ui-03;
-  margin: 0 spacing.$spacing-05;
+  border: 1px solid $ui-03;
+  border-top: 0;
+  margin: 0 spacing.$spacing-05 spacing.$spacing-05;
+  background-color: $ui-01;
+}
+
+@media (max-width: 1056px) {
+  .tableControls {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .tableActions {
+    justify-content: flex-start;
+    width: 100%;
+  }
 }
 
 @media (max-width: 672px) {
+  .tableControls {
+    margin: spacing.$spacing-03 spacing.$spacing-03 0;
+    padding: spacing.$spacing-03;
+  }
+
+  .tableActions {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: spacing.$spacing-03;
+  }
+
   .tableContainer {
     margin: 0 spacing.$spacing-03;
   }
 
-  .toolbarContent {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: spacing.$spacing-03;
-    height: auto;
-    padding: spacing.$spacing-03 0;
-  }
-
   .search {
     max-width: 100%;
+    min-width: 0;
     width: 100%;
   }
 
@@ -160,6 +214,6 @@
   }
 
   .paginationOverride {
-    margin: 0 spacing.$spacing-03;
+    margin: 0 spacing.$spacing-03 spacing.$spacing-03;
   }
 }

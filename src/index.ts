@@ -4,7 +4,7 @@ import { moduleName } from './constants';
 import { createDashboardLink } from './hooks/createDashboardLink';
 import { ClinicalRoomMeta, ReceptionMeta, TriageMeta } from './dashboard.meta';
 import moveToNextServicePointActionComponent from './active-visits/action-buttons/move-to-next-service-point-patient-action.component';
-import pickPatientEntryQueueComponent from './active-visits/dialogs/pick-patient-dialog.component';
+import pickPatientEntryQueueComponent from './active-visits/dialogs/pick-queue-patient-dialog.component';
 import queueScreenComponent from './components/queue-board/queue-board.component';
 import rootComponent from './root.component';
 import triageRoomComponent from './pages/queue-triage-home.component';
@@ -21,7 +21,7 @@ import moveToNextServicePointWorkspace from './active-visits/workspace/move-to-n
 // modal
 import endVisitConfirmationModalComponent from './active-visits/end-visit/end-visit-modal.component';
 
-import endVisitActionButtonComponent from './active-visits/end-visit/end-visit-action-button.component';
+import endVisitActionButtonComponent from './active-visits/action-buttons/end-visit-action-button.component';
 
 import deathNotificationActionsButtonComponent from './active-visits/action-buttons/death-notification-actions-button.component';
 

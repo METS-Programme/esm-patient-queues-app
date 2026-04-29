@@ -1,7 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, Form, ModalBody, ModalFooter, ModalHeader, InlineLoading } from '@carbon/react';
-import styles from './end-visit-modal.scss';
-import { useTranslation } from 'react-i18next';
+import { Button, Form, InlineLoading, ModalBody, ModalFooter, ModalHeader } from '@carbon/react';
 import {
   getCoreTranslation,
   getSessionStore,
@@ -13,6 +11,8 @@ import {
   useSession,
   useVisit,
 } from '@openmrs/esm-framework';
+import { useTranslation } from 'react-i18next';
+
 import {
   getCareProvider,
   getCurrentPatientQueueByPatientUuid,
@@ -21,158 +21,214 @@ import {
 } from '../resources/patient-queues.resource';
 import { QueueStatus, extractErrorMessagesFromResponse, handleMutate } from '../../utils/utils';
 
+import styles from './end-visit-modal.scss';
+
 interface EndVisitConfirmationProps {
   patientUuid: string;
   closeModal: () => void;
 }
 
+const DEFAULT_PRIORITY_COMMENT = 'Not Urgent';
+
+function getOpenmrsSpaBase() {
+  return window.getOpenmrsSpaBase?.() ?? '/openmrs/spa/';
+}
+
+function getPostEndVisitRoute(hasQueueEntry: boolean) {
+  const spaBase = getOpenmrsSpaBase();
+  const roles = getSessionStore().getState().session?.user?.roles ?? [];
+
+  if (!hasQueueEntry) {
+    return `${spaBase}home`;
+  }
+
+  const hasClinicianRole = roles.some((role) => role?.display === 'Organizational: Clinician');
+  const hasTriageRole = roles.some((role) => role?.display === 'Triage');
+
+  if (hasClinicianRole) {
+    return `${spaBase}home/clinical-room-patient-queues`;
+  }
+
+  if (hasTriageRole) {
+    return `${spaBase}home/triage-patient-queues`;
+  }
+
+  return `${spaBase}home`;
+}
+
 const EndVisitConfirmation: React.FC<EndVisitConfirmationProps> = ({ closeModal, patientUuid }) => {
   const { t } = useTranslation();
-
-  const [isFetchingProvider, setIsFetchingProvider] = useState(false);
-
-  const [isEndingVisit, setIsEndingVisit] = useState(false);
-
-  const priorityLabels = useMemo(() => ['Not Urgent', 'Urgent', 'Emergency'], []);
-
-  const [provider, setProvider] = useState('');
-
+  const session = useSession();
   const { activeVisit } = useVisit(patientUuid);
 
-  const sessionUser = useSession();
+  const [providerUuid, setProviderUuid] = useState('');
+  const [isFetchingProvider, setIsFetchingProvider] = useState(false);
+  const [isEndingVisit, setIsEndingVisit] = useState(false);
 
-  // Memoize the function to fetch the provider using useCallback
-  const fetchProvider = useCallback(() => {
-    if (!sessionUser?.user?.uuid) return;
+  const sessionUserUuid = session?.user?.uuid;
+  const sessionLocationUuid = session?.sessionLocation?.uuid;
+
+  const canSubmit = useMemo(() => {
+    return !isEndingVisit && !isFetchingProvider;
+  }, [isEndingVisit, isFetchingProvider]);
+
+  const fetchProvider = useCallback(async () => {
+    if (!sessionUserUuid) {
+      return;
+    }
 
     setIsFetchingProvider(true);
 
-    getCareProvider(sessionUser?.user?.uuid).then(
-      (response) => {
-        const uuid = response?.data?.results[0].uuid;
-        setIsFetchingProvider(false);
-        setProvider(uuid);
-      },
-      (error) => {
-        const errorMessages = extractErrorMessagesFromResponse(error);
-        setIsFetchingProvider(false);
+    try {
+      const response = await getCareProvider(sessionUserUuid);
+      const provider = response?.data?.results?.[0];
+
+      if (!provider?.uuid) {
         showNotification({
-          title: "Couldn't get provider",
-          kind: 'error',
-          critical: true,
-          description: errorMessages.join(','),
+          title: t('providerNotFound', 'Provider not found'),
+          kind: 'warning',
+          description: t('providerNotFoundDescription', 'No provider account is linked to the current user.'),
         });
-      },
-    );
-  }, [sessionUser?.user?.uuid]);
+        return;
+      }
 
-  useEffect(() => fetchProvider(), [fetchProvider]);
+      setProviderUuid(provider.uuid);
+    } catch (error) {
+      const errorMessages = extractErrorMessagesFromResponse(error);
 
-  const handleEndVisit = async () => {
+      showNotification({
+        title: t('couldNotGetProvider', "Couldn't get provider"),
+        kind: 'error',
+        critical: true,
+        description:
+          errorMessages.length > 0 ? errorMessages.join(', ') : t('unexpectedError', 'An unexpected error occurred'),
+      });
+    } finally {
+      setIsFetchingProvider(false);
+    }
+  }, [sessionUserUuid, t]);
+
+  useEffect(() => {
+    fetchProvider();
+  }, [fetchProvider]);
+
+  const handleEndVisit = useCallback(async () => {
     setIsEndingVisit(true);
-
-    const endVisitPayload = {
-      location: activeVisit?.location?.uuid,
-      startDatetime: parseDate(activeVisit?.startDatetime),
-      visitType: activeVisit?.visitType?.uuid,
-      stopDatetime: new Date(),
-    };
 
     try {
       let hasEndedVisit = false;
       let hasEndedQueue = false;
 
-      // 1. Attempt to end the visit if it exists
       if (activeVisit?.uuid) {
+        const endVisitPayload = {
+          location: activeVisit.location?.uuid,
+          startDatetime: activeVisit.startDatetime ? parseDate(activeVisit.startDatetime) : undefined,
+          visitType: activeVisit.visitType?.uuid,
+          stopDatetime: new Date(),
+        };
+
         const visitResponse = await updateVisit(activeVisit.uuid, endVisitPayload);
+
         if (visitResponse.status === 200) {
           hasEndedVisit = true;
         }
       }
 
-      // 2. Get queue entry and end it if found
-      const queueResponse = await getCurrentPatientQueueByPatientUuid(patientUuid, sessionUser?.sessionLocation?.uuid);
+      const queueResponse = await getCurrentPatientQueueByPatientUuid(patientUuid, sessionLocationUuid);
 
-      const queues = queueResponse?.data?.results?.[0]?.patientQueues || [];
+      const queues = queueResponse?.data?.results?.[0]?.patientQueues ?? [];
       const queueEntry = queues.find((item) => item?.patient?.uuid === patientUuid);
 
-      if (queueEntry) {
-        await updateQueueEntry(QueueStatus.Completed, provider, queueEntry.uuid, 0, priorityLabels[0], 'visit-ended');
+      if (queueEntry?.uuid) {
+        await updateQueueEntry(
+          QueueStatus.Completed,
+          providerUuid,
+          queueEntry.uuid,
+          0,
+          DEFAULT_PRIORITY_COMMENT,
+          'visit-ended',
+        );
+
         hasEndedQueue = true;
       }
 
-      // 3. If anything was ended, proceed with navigation and feedback
-      if (hasEndedVisit || hasEndedQueue) {
-        let navigateTo = `${window.getOpenmrsSpaBase()}home`;
+      handleMutate(`${restBaseUrl}/patientqueue`);
+      handleMutate(`${restBaseUrl}/queuestatistics`);
 
-        if (queueEntry) {
-          const roles = getSessionStore().getState().session?.user?.roles || [];
-          const hasClinicianRole = roles.some((role) => role?.display === 'Organizational: Clinician');
-          const hasTriageRole = roles.some((role) => role?.display === 'Triage');
-
-          if (hasClinicianRole) {
-            navigateTo = `${window.getOpenmrsSpaBase()}home/clinical-room-patient-queues`;
-          } else if (hasTriageRole) {
-            navigateTo = `${window.getOpenmrsSpaBase()}home/triage-patient-queues`;
-          }
-        }
-
-        closeModal();
-        navigate({ to: navigateTo });
-        handleMutate(`${restBaseUrl}/patientqueue`);
-        setIsEndingVisit(false);
-
+      if (!hasEndedVisit && !hasEndedQueue) {
         showSnackbar({
-          title: hasEndedVisit ? 'Visit Ended' : 'Queue Completed',
-          subtitle: t(
-            hasEndedVisit && hasEndedQueue ? 'endedSuccessfully' : hasEndedVisit ? 'visitEndedOnly' : 'queueEndedOnly',
-            hasEndedVisit && hasEndedQueue
-              ? 'Visit and queue ended successfully'
-              : hasEndedVisit
-                ? 'Visit ended successfully'
-                : 'Queue ended successfully',
-          ),
-          kind: 'success',
-        });
-      } else {
-        // Nothing was ended
-        closeModal();
-        setIsEndingVisit(false);
-        showSnackbar({
-          title: 'No Action Taken',
+          title: t('noActionTaken', 'No action taken'),
           subtitle: t('noVisitOrQueueToEnd', 'No active visit or queue found to end.'),
           kind: 'info',
         });
+
+        closeModal();
+        return;
       }
-    } catch (error) {
+
+      showSnackbar({
+        title: hasEndedVisit ? t('visitEnded', 'Visit ended') : t('queueCompleted', 'Queue completed'),
+        subtitle: t(
+          hasEndedVisit && hasEndedQueue
+            ? 'visitAndQueueEndedSuccessfully'
+            : hasEndedVisit
+              ? 'visitEndedSuccessfully'
+              : 'queueEndedSuccessfully',
+          hasEndedVisit && hasEndedQueue
+            ? 'Visit and queue ended successfully.'
+            : hasEndedVisit
+              ? 'Visit ended successfully.'
+              : 'Queue ended successfully.',
+        ),
+        kind: 'success',
+      });
+
       closeModal();
-      setIsEndingVisit(false);
+
+      navigate({
+        to: getPostEndVisitRoute(Boolean(queueEntry)),
+      });
+    } catch (error) {
       const errorMessages = extractErrorMessagesFromResponse(error);
+
       showNotification({
-        title: t('endVisit', 'Error ending visit'),
+        title: t('endVisitError', 'Error ending visit'),
         kind: 'error',
         critical: true,
-        description: errorMessages.join(','),
+        description:
+          errorMessages.length > 0 ? errorMessages.join(', ') : t('unexpectedError', 'An unexpected error occurred'),
       });
+    } finally {
+      setIsEndingVisit(false);
     }
-  };
+  }, [activeVisit, closeModal, patientUuid, providerUuid, sessionLocationUuid, t]);
 
   return (
-    <Form>
-      {isFetchingProvider && <InlineLoading status="active" description="Is Fetching" />}
-      <ModalHeader closeModal={close} className={styles.modalHeader}>
-        {t('endVisit', 'End Visit')}?
+    <Form className={styles.form}>
+      <ModalHeader closeModal={closeModal} className={styles.modalHeader}>
+        {t('endVisit', 'End visit')}?
       </ModalHeader>
-      <ModalBody>
+
+      <ModalBody className={styles.modalBody}>
+        {isFetchingProvider ? (
+          <InlineLoading
+            className={styles.inlineLoading}
+            status="active"
+            description={t('fetchingProvider', 'Fetching provider...')}
+          />
+        ) : null}
+
         <p className={styles.bodyText}>
-          {t('endVisitText', `Are you sure you want to end this visit? This action can't be undone.`)}
+          {t('endVisitText', "Are you sure you want to end this visit? This action can't be undone.")}
         </p>
       </ModalBody>
-      <ModalFooter>
-        <Button size="lg" kind="secondary" onClick={closeModal}>
+
+      <ModalFooter className={styles.modalFooter}>
+        <Button size="lg" kind="secondary" onClick={closeModal} disabled={isEndingVisit} type="button">
           {getCoreTranslation('cancel')}
         </Button>
-        <Button autoFocus kind="danger" onClick={handleEndVisit} size="lg" disabled={isEndingVisit}>
+
+        <Button autoFocus kind="danger" onClick={handleEndVisit} size="lg" disabled={!canSubmit} type="button">
           {isEndingVisit ? (
             <InlineLoading description={t('endingVisit', 'Ending visit...')} />
           ) : (
