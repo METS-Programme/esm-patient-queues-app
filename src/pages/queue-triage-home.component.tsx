@@ -3,13 +3,13 @@ import { Tabs, TabPanel, TabList, Tab, TabPanels, Tile } from '@carbon/react';
 import { useTranslation } from 'react-i18next';
 import { useSession, userHasAccess } from '@openmrs/esm-framework';
 
-import ActiveTriageVisitsTable from '../active-visits/queue-patients-triage/queue-triage-table.component';
 import PatientQueueHeader from '../components/patient-queue-header/patient-queue-header.component';
 import QueueSummaryTiles from '../components/summary-tiles/queue-summary-tiles.component';
-import { APP_PATIENTQUEUE_TRIAGE_DASHBOARD } from '../config/privileges';
 import { QueueStatus } from '../utils/utils';
 
 import styles from './queue-triage-home.scss';
+import ActiveTriageVisitsTable from '../active-visits/active-visit-tables/queue-patients-triage/queue-triage-table.component';
+import { APP_PATIENTQUEUE_TRIAGE_DASHBOARD } from '../constants';
 
 const TriageHome: React.FC = () => {
   const { t } = useTranslation();

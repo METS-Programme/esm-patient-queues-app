@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import useSWR from 'swr';
 import {
+  type NewVisitPayload,
   type Workspace2DefinitionProps,
   launchWorkspace2,
   openmrsFetch,
@@ -8,15 +9,15 @@ import {
   usePagination,
 } from '@openmrs/esm-framework';
 import { type PatientQueue } from '../../types/patient-queues';
-import { type NewVisitPayload, type ProviderResponse } from '../../types';
 import {
   type ResourceFilterCriteria,
   ResourceRepresentation,
   toQueryParams,
 } from '../../utils/resource-filter-criteria';
 import { type PageableResult } from '../../utils/pageable-result';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import last from 'lodash-es/last';
+import { type ProviderResponse, type QueueRoomsResponse } from '../../types';
 export const patientQueueStartVisitFormWorkspace = 'patient-queues-start-visit-form-workspace';
 
 export interface PatientQueueFilter extends ResourceFilterCriteria {
@@ -229,7 +230,7 @@ export async function getCurrentVisit(patient: string, date: string) {
   });
 }
 
-export async function checkCurrentVisit(patientUuid) {
+export async function checkCurrentVisit(patientUuid: string) {
   const date = dayjs().format('YYYY-MM-DD');
   const resp = await getCurrentVisit(patientUuid, date);
   return resp.data?.results !== null && resp.data?.results.length > 0;
@@ -432,3 +433,19 @@ export const launchStartVisitForm = () => {
     },
   );
 };
+
+export function useQueueRoomLocations(currentQueueLocation: string) {
+  const apiUrl = `${restBaseUrl}/location/${currentQueueLocation}?v=full`;
+  const { data, error, isLoading, mutate } = useSWR<{ data: QueueRoomsResponse }>(apiUrl, openmrsFetch);
+
+  const queueRoomLocations = useMemo(
+    () => data?.data?.parentLocation?.childLocations?.map((response) => response) ?? [],
+    [data?.data?.parentLocation?.childLocations],
+  );
+  return {
+    queueRoomLocations: queueRoomLocations.filter((location) => location?.uuid != null) ? queueRoomLocations : [],
+    isLoading,
+    error,
+    mutate,
+  };
+}

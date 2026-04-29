@@ -5,11 +5,11 @@ import { useSession, userHasAccess } from '@openmrs/esm-framework';
 
 import PatientQueueHeader from '../components/patient-queue-header/patient-queue-header.component';
 import QueueSummaryTiles from '../components/summary-tiles/queue-summary-tiles.component';
-import ActiveClinicalVisitsTable from '../active-visits/queue-patients-clinical/queue-clinical-table.component';
-import { APP_PATIENTQUEUE_CLINICIAN_DASHBOARD } from '../config/privileges';
 import { QueueStatus } from '../utils/utils';
 
 import styles from './queue-clinical-home.scss';
+import ActiveClinicalVisitsTable from '../active-visits/active-visit-tables/queue-patients-clinical/queue-clinical-table.component';
+import { APP_PATIENTQUEUE_CLINICIAN_DASHBOARD } from '../constants';
 
 const ClinicalRoomHome: React.FC = () => {
   const { t } = useTranslation();
