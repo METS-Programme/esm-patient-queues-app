@@ -1,30 +1,41 @@
 import React, { useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import { launchWorkspace2 } from '@openmrs/esm-framework';
+import { useTranslation } from 'react-i18next';
 
-interface MovetoNextServicePointPatientProps {
-  patientUuid: string;
+import styles from './move-to-next-service-point-action-button.scss';
+
+interface MoveToNextServicePointPatientActionButtonProps {
+  patientUuid?: string;
+  disabled?: boolean;
 }
 
-const MovetoNextServicePointPatientActionButton: React.FC<MovetoNextServicePointPatientProps> = ({ patientUuid }) => {
+const MoveToNextServicePointPatientActionButton: React.FC<MoveToNextServicePointPatientActionButtonProps> = ({
+  patientUuid,
+  disabled = false,
+}) => {
   const { t } = useTranslation();
+
   const handleClick = useCallback(() => {
+    if (!patientUuid || disabled) {
+      return;
+    }
+
     launchWorkspace2('move-to-next-service-point-form-workspace', {
-      patientUuid: patientUuid,
+      patientUuid,
       showPatientHeader: true,
     });
-  }, [patientUuid]);
+  }, [disabled, patientUuid]);
+
   return (
     <li className="cds--overflow-menu-options__option">
       <button
-        className="cds--overflow-menu-options__btn"
+        className={`cds--overflow-menu-options__btn max-width: 100vw`}
         role="menuitem"
+        type="button"
         title={t('moveToNext', 'Move to Next Service Point')}
+        disabled={disabled || !patientUuid}
         data-floating-menu-primary-focus
         onClick={handleClick}
-        style={{
-          maxWidth: '100vw',
-        }}
       >
         <span className="cds--overflow-menu-options__option-content">
           {t('moveToNext', 'Move to Next Service Point')}
@@ -33,4 +44,5 @@ const MovetoNextServicePointPatientActionButton: React.FC<MovetoNextServicePoint
     </li>
   );
 };
-export default MovetoNextServicePointPatientActionButton;
+
+export default MoveToNextServicePointPatientActionButton;

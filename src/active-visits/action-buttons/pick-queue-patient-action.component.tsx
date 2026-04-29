@@ -1,44 +1,62 @@
-import { Button } from '@carbon/react';
+import React, { useCallback, useMemo } from 'react';
+import { Button, Tooltip } from '@carbon/react';
 import { Notification } from '@carbon/react/icons';
 import { showModal, showSnackbar, useSession } from '@openmrs/esm-framework';
-import React, { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type PatientQueue } from '../../types/patient-queues';
-import { usePatientQueuePages } from '../resources/patient-queues.resource';
-import { QueueEnumStatus, QueueStatus } from '../../utils/utils';
-import { updateSelectedPatientQueueUuid } from '../../helpers/helpers';
 
-interface PickPatientActionMenuProps {
-  queueEntry: PatientQueue;
-  closeModal: () => void;
+import { updateSelectedPatientQueueUuid } from '../../helpers/helpers';
+import { type PatientQueue } from '../../types/patient-queues';
+import { QueueEnumStatus, QueueStatus } from '../../utils/utils';
+import { usePatientQueuePages } from '../resources/patient-queues.resource';
+
+interface PickQueuePatientActionButtonProps {
+  queueEntry?: PatientQueue;
+  closeModal?: () => void;
+  disabled?: boolean;
 }
 
-const PickQueuePatientActionButton: React.FC<PickPatientActionMenuProps> = ({ queueEntry, closeModal }) => {
+const PickQueuePatientActionButton: React.FC<PickQueuePatientActionButtonProps> = ({
+  queueEntry,
+  closeModal,
+  disabled = false,
+}) => {
   const { t } = useTranslation();
-  const { sessionLocation, user } = useSession() || {};
-  const sessionLocationId = sessionLocation?.uuid ?? '';
-  const providerId = user?.systemId;
+  const session = useSession();
 
-  useEffect(() => {
-    if (queueEntry?.uuid) {
-      updateSelectedPatientQueueUuid(queueEntry?.uuid);
-    }
-  }, [queueEntry?.uuid]);
+  const sessionLocationUuid = session?.sessionLocation?.uuid ?? '';
+  const providerIdentifier = session?.user?.systemId ?? '';
 
-  const { items: pickedQueueItems } = usePatientQueuePages(sessionLocationId, QueueStatus.Picked);
+  const { items: pickedQueueItems = [] } = usePatientQueuePages(sessionLocationUuid, QueueStatus.Picked);
 
   const hasPickedPatient = useMemo(() => {
-    if (!pickedQueueItems || !providerId) return false;
+    if (!providerIdentifier) {
+      return false;
+    }
+
     return pickedQueueItems.some(
-      (item) => item?.provider?.identifier === providerId && item?.status === QueueEnumStatus.PICKED,
+      (item) => item?.provider?.identifier === providerIdentifier && item?.status === QueueEnumStatus.PICKED,
     );
-  }, [pickedQueueItems, providerId]);
+  }, [pickedQueueItems, providerIdentifier]);
 
   const launchPickPatientQueueModal = useCallback(() => {
+    if (disabled) {
+      return;
+    }
+
+    if (!queueEntry?.uuid) {
+      showSnackbar({
+        title: t('missingQueueEntry', 'Missing queue entry'),
+        subtitle: t('missingQueueEntryDescription', 'Unable to pick this patient because the queue entry is missing.'),
+        kind: 'error',
+        autoClose: true,
+      });
+      return;
+    }
+
     if (hasPickedPatient) {
       showSnackbar({
         title: t('alreadyPickedPatient', 'You have already picked a patient'),
-        subtitle: t('completeCurrentPatient', 'Please complete the current one before picking another'),
+        subtitle: t('completeCurrentPatient', 'Please complete the current one before picking another.'),
         kind: 'error',
         autoClose: true,
       });
@@ -48,12 +66,14 @@ const PickQueuePatientActionButton: React.FC<PickPatientActionMenuProps> = ({ qu
     if (queueEntry.status !== QueueEnumStatus.PENDING) {
       showSnackbar({
         title: t('invalidStatus', 'Patient cannot be picked'),
-        subtitle: t('onlyPendingAllowed', 'Only patients in PENDING status can be picked'),
+        subtitle: t('onlyPendingAllowed', 'Only patients in pending status can be picked.'),
         kind: 'error',
         autoClose: true,
       });
       return;
     }
+
+    updateSelectedPatientQueueUuid(queueEntry.uuid);
 
     const dispose = showModal('pick-patient-queue-entry', {
       queueEntry,
@@ -62,15 +82,22 @@ const PickQueuePatientActionButton: React.FC<PickPatientActionMenuProps> = ({ qu
         closeModal?.();
       },
     });
-  }, [hasPickedPatient, queueEntry, t, closeModal]);
+  }, [closeModal, disabled, hasPickedPatient, queueEntry, t]);
+
+  const isDisabled = disabled || !queueEntry?.uuid || queueEntry?.status !== QueueEnumStatus.PENDING;
 
   return (
-    <Button
-      kind="ghost"
-      onClick={launchPickPatientQueueModal}
-      iconDescription={t('pickPatient', 'Pick Patient')}
-      renderIcon={(props) => <Notification size={16} {...props} />}
-    />
+    <Tooltip align="bottom" label={t('pickPatient', 'Pick patient')}>
+      <Button
+        kind="ghost"
+        size="sm"
+        hasIconOnly
+        disabled={isDisabled}
+        onClick={launchPickPatientQueueModal}
+        iconDescription={t('pickPatient', 'Pick patient')}
+        renderIcon={Notification}
+      />
+    </Tooltip>
   );
 };
 

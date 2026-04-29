@@ -1,44 +1,59 @@
-import React, { type AnchorHTMLAttributes, useCallback, useEffect } from 'react';
-
-import { Button } from '@carbon/react';
+import React, { useCallback } from 'react';
+import { Button, Tooltip } from '@carbon/react';
 import { Dashboard } from '@carbon/react/icons';
-import { useTranslation } from 'react-i18next';
 import { navigate } from '@openmrs/esm-framework';
+import { useTranslation } from 'react-i18next';
+
 import { updateSelectedPatientQueueUuid } from '../../helpers/helpers';
 
-interface NameLinkProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
-  to: string;
-  from: string;
-  queueUuid: string;
+interface ViewQueuePatientActionMenuProps {
+  to?: string;
+  from?: string;
+  queueUuid?: string;
+  disabled?: boolean;
 }
 
-const ViewQueuePatientActionMenu: React.FC<NameLinkProps> = ({ from, to, queueUuid }) => {
+const ViewQueuePatientActionMenu: React.FC<ViewQueuePatientActionMenuProps> = ({
+  from,
+  to,
+  queueUuid,
+  disabled = false,
+}) => {
   const { t } = useTranslation();
 
-  useEffect(() => {
-    if (queueUuid) {
-      updateSelectedPatientQueueUuid(queueUuid);
-    }
-  }, [queueUuid]);
-
-  const handleNameClick = useCallback(
-    (event: any) => {
+  const handleViewPatient = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
       event.preventDefault();
-      localStorage.setItem('fromPage', from);
+
+      if (!to || disabled) {
+        return;
+      }
+
+      if (queueUuid) {
+        updateSelectedPatientQueueUuid(queueUuid);
+      }
+
+      if (from) {
+        localStorage.setItem('fromPage', from);
+      }
+
       navigate({ to });
     },
-    [from, to],
+    [disabled, from, queueUuid, to],
   );
 
   return (
-    <div>
+    <Tooltip align="bottom" label={t('viewPatient', 'View patient')}>
       <Button
         kind="ghost"
-        onClick={handleNameClick}
-        iconDescription={t('viewPatient', 'View Patient')}
-        renderIcon={(props) => <Dashboard size={16} {...props} />}
+        size="sm"
+        hasIconOnly
+        disabled={disabled || !to}
+        onClick={handleViewPatient}
+        iconDescription={t('viewPatient', 'View patient')}
+        renderIcon={Dashboard}
       />
-    </div>
+    </Tooltip>
   );
 };
 
