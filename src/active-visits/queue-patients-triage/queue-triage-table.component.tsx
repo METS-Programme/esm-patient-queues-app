@@ -30,7 +30,6 @@ import {
   trimVisitNumber,
 } from '../../helpers/functions';
 import PickQueuePatientActionMenu from '../action-buttons/pick-queue-patient-action-action.component';
-import NotesActionsMenu from '../notes/notes-action-menu.components';
 import MovetoNextServicePointReassignAction from '../action-buttons/move-to-next-service-point-re-assign-action.component';
 import ViewQueuePatientActionMenu from '../action-buttons/view-queue-patient-action-menu.component';
 import StatusIcon, { QueueStatus } from '../../utils/utils';
@@ -290,8 +289,6 @@ const ActiveTriageVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status }) =
                   queueUuid={queueEntry.uuid}
                 />
               )}
-
-              <NotesActionsMenu note={queueEntry} />
 
               {queueEntry.status === 'PENDING' && showAllLocations && queueEntry.patient?.uuid && (
                 <MovetoNextServicePointReassignAction patientUuid={queueEntry.patient.uuid} />

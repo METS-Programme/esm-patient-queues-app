@@ -4,7 +4,6 @@ import { moduleName } from './constants';
 import { createDashboardLink } from './hooks/createDashboardLink';
 import { ClinicalRoomMeta, ReceptionMeta, TriageMeta } from './dashboard.meta';
 import moveToNextServicePointActionComponent from './active-visits/action-buttons/move-to-next-service-point-patient-action.component';
-import notesModalComponent from './active-visits/notes/notes-dialog.component';
 import pickPatientEntryQueueComponent from './active-visits/dialogs/pick-patient-dialog.component';
 import queueScreenComponent from './components/queue-board/queue-board.component';
 import rootComponent from './root.component';
@@ -13,10 +12,10 @@ import receptionRoomComponent from './pages/queue-reception-home.component';
 import clinicalRoomComponent from './pages/queue-clinical-home.component';
 import startVisitFormComponent from './active-visits/visit-form/start-a-visit-form.workspace';
 import startVisitFormButtonComponent from './active-visits/visit-form/start-visit-form-button.component';
-import checkedInTileComponent from './queue-tiles/checked-in-tile.component';
-import queueCompletedTileComponent from './queue-tiles/queue-completed-tile.component';
-import queueInQueueTileComponent from './queue-tiles/queue-in-queue-tile.component';
-import queueWaitingTileComponent from './queue-tiles/queue-waiting-tile.component';
+import checkedInTileComponent from './components/queue-tiles/checked-in-tile.component';
+import queueCompletedTileComponent from './components/queue-tiles/queue-completed-tile.component';
+import queueInQueueTileComponent from './components/queue-tiles/queue-in-queue-tile.component';
+import queueWaitingTileComponent from './components/queue-tiles/queue-waiting-tile.component';
 import moveToNextServicePointWorkspace from './active-visits/workspace/move-to-next-service-point.workspace';
 
 // modal
@@ -24,7 +23,7 @@ import endVisitConfirmationModalComponent from './active-visits/end-visit/end-vi
 
 import endVisitActionButtonComponent from './active-visits/end-visit/end-visit-action-button.component';
 
-import deathNotificationActionsButtonComponent from './active-visits/action-buttons/death/death-notification-actions-button.component';
+import deathNotificationActionsButtonComponent from './active-visits/action-buttons/death-notification-actions-button.component';
 
 export const importTranslation = require.context('../translations', false, /.json$/, 'lazy');
 
@@ -70,8 +69,6 @@ export const startVisitFormWorkspace = getSyncLifecycle(startVisitFormComponent,
 export const startVisitFormButton = getSyncLifecycle(startVisitFormButtonComponent, options);
 
 export const deathNotificationActionsButton = getSyncLifecycle(deathNotificationActionsButtonComponent, options);
-
-export const notesModal = getSyncLifecycle(notesModalComponent, options);
 
 // summary tiles
 

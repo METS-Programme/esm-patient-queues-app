@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useSession, userHasAccess } from '@openmrs/esm-framework';
 
 import PatientQueueHeader from '../components/patient-queue-header/patient-queue-header.component';
-import QueueSummaryTiles from '../summary-tiles/queue-summary-tiles.component';
+import QueueSummaryTiles from '../components/summary-tiles/queue-summary-tiles.component';
 import ActiveClinicalVisitsTable from '../active-visits/queue-patients-clinical/queue-clinical-table.component';
 import { APP_PATIENTQUEUE_CLINICIAN_DASHBOARD } from '../config/privileges';
 import { QueueStatus } from '../utils/utils';

@@ -39,7 +39,7 @@ import PrintActionsMenu from '../active-visits/action-buttons/print-action-menu.
 import CheckInLauncher from '../components/check-in/check-in.component';
 import PatientQueueHeader from '../components/patient-queue-header/patient-queue-header.component';
 import QueueLauncher from '../components/queue-launcher/queue-launcher.component';
-import SummaryTile, { type SummaryTileValue } from '../summary-tiles/summary-tile.component';
+import SummaryTile, { type SummaryTileValue } from '../components/summary-tiles/summary-tile.component';
 
 import styles from './queue-reception-home.scss';
 

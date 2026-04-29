@@ -30,7 +30,6 @@ import {
   trimVisitNumber,
 } from '../../helpers/functions';
 import PickPatientActionMenu from '../action-buttons/pick-queue-patient-action-action.component';
-import NotesActionsMenu from '../notes/notes-action-menu.components';
 import MovetoNextServicePointReassignAction from '../action-buttons/move-to-next-service-point-re-assign-action.component';
 import ViewQueuePatientActionMenu from '../action-buttons/view-queue-patient-action-menu.component';
 import StatusIcon, { QueueStatus } from '../../utils/utils';
@@ -307,8 +306,6 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
                 />
               )}
 
-              <NotesActionsMenu note={queueEntry} />
-
               {queueEntry.status === 'PENDING' && showAllLocations && queueEntry.patient?.uuid && (
                 <MovetoNextServicePointReassignAction patientUuid={queueEntry.patient.uuid} />
               )}
@@ -354,7 +351,7 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
                 <TableToolbarSearch
                   expanded
                   className={styles.search}
-                  onChange={(e) => handleSearchInputChange(e.target.value)}
+                  onChange={(e) => handleSearchInputChange}
                   placeholder={t('searchThisList', 'Search this list')}
                   size="sm"
                   value={searchTerm}

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { usePatientQueuePages } from '../active-visits/resources/patient-queues.resource';
+import { usePatientQueuePages } from '../../active-visits/resources/patient-queues.resource';
 import SummaryTile, { type SummaryTileValue } from '../summary-tiles/summary-tile.component';
 
 const CheckedInTile: React.FC = () => {

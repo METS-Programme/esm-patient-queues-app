@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { useSession } from '@openmrs/esm-framework';
 
 import SummaryTile, { type SummaryTileValue } from '../summary-tiles/summary-tile.component';
-import { usePatientQueuePages } from '../active-visits/resources/patient-queues.resource';
-import { QueueEnumStatus } from '../utils/utils';
+import { usePatientQueuePages } from '../../active-visits/resources/patient-queues.resource';
+import { QueueEnumStatus } from '../../utils/utils';
 
 const WAITING_STATUSES = [QueueEnumStatus.PICKED, QueueEnumStatus.PENDING];
 

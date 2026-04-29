@@ -5,7 +5,7 @@ import { useSession, userHasAccess } from '@openmrs/esm-framework';
 
 import ActiveTriageVisitsTable from '../active-visits/queue-patients-triage/queue-triage-table.component';
 import PatientQueueHeader from '../components/patient-queue-header/patient-queue-header.component';
-import QueueSummaryTiles from '../summary-tiles/queue-summary-tiles.component';
+import QueueSummaryTiles from '../components/summary-tiles/queue-summary-tiles.component';
 import { APP_PATIENTQUEUE_TRIAGE_DASHBOARD } from '../config/privileges';
 import { QueueStatus } from '../utils/utils';
 
