@@ -1,30 +1,30 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-
 import {
   Button,
+  ButtonSet,
   ContentSwitcher,
+  InlineLoading,
+  InlineNotification,
+  Layer,
   Select,
   SelectItem,
   Switch,
-  InlineLoading,
   TextArea,
-  Layer,
-  InlineNotification,
-  ButtonSet,
 } from '@carbon/react';
 import {
-  type DefaultWorkspaceProps,
+  getSessionStore,
   navigate,
   restBaseUrl,
   showNotification,
-  useLayoutType,
-  useSession,
-  getSessionStore,
   showSnackbar,
   type Workspace2DefinitionProps,
+  useLayoutType,
+  useSession,
 } from '@openmrs/esm-framework';
+import { Controller, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
-import styles from './move-to-next-service-point.scss';
+
 import { QueueStatus, extractErrorMessagesFromResponse, handleMutate } from '../../utils/utils';
 import {
   type NewQueuePayload,
@@ -36,8 +36,6 @@ import {
   useProviders,
   useQueueRoomLocations,
 } from '../resources/patient-queues.resource';
-import { Controller, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   type CreateQueueEntryFormData,
   createQueueEntrySchema,
@@ -45,9 +43,51 @@ import {
 import { getSelectedPatientQueueUuid } from '../../helpers/helpers';
 import { type PatientQueue } from '../../types/patient-queues';
 
+import styles from './move-to-next-service-point.scss';
+
 type MoveToNextServicePointFormProps = {
   patientUuid: string;
 };
+
+type ResponsiveWrapperProps = {
+  children: React.ReactNode;
+  isTablet: boolean;
+};
+
+const PRIORITY_LABELS = ['Not Urgent', 'Urgent', 'Emergency'] as const;
+
+const STATUS_OPTIONS = [
+  {
+    status: QueueStatus.Pending,
+    label: 'Move to Pending',
+  },
+  {
+    status: QueueStatus.Completed,
+    label: 'Move to Completed',
+  },
+] as const;
+
+function getOpenmrsSpaBase() {
+  return window.getOpenmrsSpaBase?.() ?? '/openmrs/spa/';
+}
+
+function getPostMoveRoute() {
+  const spaBase = getOpenmrsSpaBase();
+  const roles = getSessionStore().getState().session?.user?.roles ?? [];
+
+  const hasClinicianRole = roles.some((role) => role?.display === 'Organizational: Clinician');
+  const hasTriageRole = roles.some((role) => role?.display === 'Triage');
+
+  if (hasClinicianRole) {
+    return `${spaBase}home/clinical-room-patient-queues`;
+  }
+
+  if (hasTriageRole) {
+    return `${spaBase}home/triage-patient-queues`;
+  }
+
+  return `${spaBase}home`;
+}
 
 const MoveToNextServicePointForm: React.FC<
   Workspace2DefinitionProps<
@@ -57,365 +97,431 @@ const MoveToNextServicePointForm: React.FC<
     }
   >
 > = ({ closeWorkspace, workspaceProps: { patientUuid } }) => {
-  // Hooks
   const { t } = useTranslation();
   const isTablet = useLayoutType() === 'tablet';
-  const sessionUser = useSession();
-  const patientQueueUuid = getSelectedPatientQueueUuid().getState();
+  const session = useSession();
 
-  // States
-  const [queueEntry, setQueueEntry] = useState<PatientQueue>();
-  const [contentSwitcherIndex, setContentSwitcherIndex] = useState(1);
-  const [statusSwitcherIndex, setStatusSwitcherIndex] = useState(1);
-  const [status, setStatus] = useState('');
-  const [provider, setProvider] = useState('');
-  const [selectedProvider, setSelectedProvider] = useState('');
-  const [priorityComment, setPriorityComment] = useState('');
-  const [comment, setComment] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const selectedQueueState = getSelectedPatientQueueUuid().getState();
+
+  const sessionLocationUuid = session?.sessionLocation?.uuid ?? '';
+  const sessionUserUuid = session?.user?.uuid;
+
+  const [queueEntry, setQueueEntry] = useState<PatientQueue | null>(null);
+  const [providerUuid, setProviderUuid] = useState('');
+  const [priorityIndex, setPriorityIndex] = useState(1);
+  const [statusIndex, setStatusIndex] = useState(1);
+  const [isFetchingProvider, setIsFetchingProvider] = useState(false);
+  const [isFetchingQueueEntry, setIsFetchingQueueEntry] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Data Fetching Hooks
-  const { queueRoomLocations, error: errorLoadingQueueRooms } = useQueueRoomLocations(
-    sessionUser?.sessionLocation?.uuid,
-  );
-  const [selectedNextQueueLocation, setSelectedNextQueueLocation] = useState(queueRoomLocations[0]?.uuid);
-  const { providers, error: errorLoadingProviders } = useProviders(selectedNextQueueLocation);
+  const { queueRoomLocations = [], error: errorLoadingQueueRooms } = useQueueRoomLocations(sessionLocationUuid);
 
-  // Memoized constants
-  const priorityLabels = useMemo(() => ['Not Urgent', 'Urgent', 'Emergency'], []);
-  const statusLabels = useMemo(
-    () => [
-      { status: 'pending', label: 'Move to Pending' },
-      { status: 'completed', label: 'Move to Completed' },
-    ],
-    [],
-  );
+  const {
+    handleSubmit,
+    control,
+    watch,
+    setValue,
+    formState: { errors, isValid },
+  } = useForm<CreateQueueEntryFormData>({
+    mode: 'all',
+    resolver: zodResolver(createQueueEntrySchema),
+    defaultValues: {
+      priorityComment: PRIORITY_LABELS[priorityIndex],
+      priority: priorityIndex,
+      status: STATUS_OPTIONS[statusIndex].status,
+      locationTo: '',
+      provider: '',
+      comment: '',
+    },
+  });
 
-  // Fetch provider info
-  const fetchProvider = useCallback(() => {
-    if (!sessionUser?.user?.uuid) return;
+  const selectedStatus = watch('status');
+  const selectedNextQueueLocation = watch('locationTo');
 
-    setIsLoading(true);
-    getCareProvider(sessionUser.user.uuid)
-      .then((response) => {
-        const uuid = response?.data?.results?.[0]?.uuid;
-        setProvider(uuid);
-      })
-      .catch((error) => {
-        const errorMessages = extractErrorMessagesFromResponse(error);
+  const {
+    providers = [],
+    error: errorLoadingProviders,
+    isLoading: isLoadingProviders,
+  } = useProviders(selectedNextQueueLocation);
+
+  const shouldShowNextServicePointFields = selectedStatus === QueueStatus.Completed;
+
+  const fetchProvider = useCallback(async () => {
+    if (!sessionUserUuid) {
+      return;
+    }
+
+    setIsFetchingProvider(true);
+
+    try {
+      const response = await getCareProvider(sessionUserUuid);
+      const provider = response?.data?.results?.[0];
+
+      if (!provider?.uuid) {
         showNotification({
-          title: "Couldn't get provider",
-          kind: 'error',
-          critical: true,
-          description: errorMessages.join(','),
+          title: t('providerNotFound', 'Provider not found'),
+          kind: 'warning',
+          description: t('providerNotFoundDescription', 'No provider account is linked to the current user.'),
           millis: 3000,
         });
-      })
-      .finally(() => setIsLoading(false));
-  }, [sessionUser?.user?.uuid]);
+        return;
+      }
 
-  // Fetch queue entry
+      setProviderUuid(provider.uuid);
+    } catch (error) {
+      const errorMessages = extractErrorMessagesFromResponse(error);
+
+      showNotification({
+        title: t('couldNotGetProvider', "Couldn't get provider"),
+        kind: 'error',
+        critical: true,
+        description:
+          errorMessages.length > 0 ? errorMessages.join(', ') : t('unexpectedError', 'An unexpected error occurred'),
+        millis: 3000,
+      });
+    } finally {
+      setIsFetchingProvider(false);
+    }
+  }, [sessionUserUuid, t]);
+
   const fetchQueueEntry = useCallback(async () => {
+    const selectedQueueUuid = selectedQueueState?.patientQueueUuid;
+
+    if (!selectedQueueUuid) {
+      return;
+    }
+
+    setIsFetchingQueueEntry(true);
+
     try {
-      const response = await getPatientQueueUuid(patientQueueUuid.patientQueueUuid);
+      const response = await getPatientQueueUuid(selectedQueueUuid);
 
       if (response?.status === 200 && response?.data) {
         setQueueEntry(response.data);
-      } else {
-        showNotification({
-          title: 'Queue entry not found',
-          kind: 'warning',
-          description: 'The server did not return a valid queue entry.',
-          critical: true,
-          millis: 3000,
-        });
+        return;
       }
-    } catch (error) {
-      const errorMessages = extractErrorMessagesFromResponse(error);
+
       showNotification({
-        title: "Couldn't get queue entry",
-        kind: 'error',
+        title: t('queueEntryNotFound', 'Queue entry not found'),
+        kind: 'warning',
+        description: t('queueEntryNotFoundDescription', 'The server did not return a valid queue entry.'),
         critical: true,
-        description: errorMessages.join(', '),
         millis: 3000,
       });
-    }
-  }, [patientQueueUuid]);
+    } catch (error) {
+      const errorMessages = extractErrorMessagesFromResponse(error);
 
-  // Effects
+      showNotification({
+        title: t('couldNotGetQueueEntry', "Couldn't get queue entry"),
+        kind: 'error',
+        critical: true,
+        description:
+          errorMessages.length > 0 ? errorMessages.join(', ') : t('unexpectedError', 'An unexpected error occurred'),
+        millis: 3000,
+      });
+    } finally {
+      setIsFetchingQueueEntry(false);
+    }
+  }, [selectedQueueState?.patientQueueUuid, t]);
+
   useEffect(() => {
     fetchProvider();
   }, [fetchProvider]);
 
   useEffect(() => {
-    if (patientQueueUuid) {
-      fetchQueueEntry();
+    fetchQueueEntry();
+  }, [fetchQueueEntry]);
+
+  useEffect(() => {
+    setValue('priorityComment', PRIORITY_LABELS[priorityIndex], {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+
+    setValue('priority', priorityIndex, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  }, [priorityIndex, setValue]);
+
+  useEffect(() => {
+    setValue('status', STATUS_OPTIONS[statusIndex].status, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  }, [setValue, statusIndex]);
+
+  useEffect(() => {
+    const defaultQueueRoom = queueRoomLocations?.[0]?.uuid;
+
+    if (defaultQueueRoom && !selectedNextQueueLocation) {
+      setValue('locationTo', defaultQueueRoom, {
+        shouldValidate: true,
+      });
     }
-  }, [patientQueueUuid, fetchQueueEntry]);
-
-  const {
-    handleSubmit,
-    control,
-    formState: { errors },
-  } = useForm<CreateQueueEntryFormData>({
-    mode: 'all',
-    resolver: zodResolver(createQueueEntrySchema),
-    defaultValues: {
-      priorityComment: priorityLabels[contentSwitcherIndex],
-      status: statusLabels[statusSwitcherIndex].status,
-    },
-  });
+  }, [queueRoomLocations, selectedNextQueueLocation, setValue]);
 
   useEffect(() => {
-    setPriorityComment(priorityLabels[contentSwitcherIndex]);
-  }, [contentSwitcherIndex, priorityLabels]);
+    const defaultProvider = providers?.[0]?.uuid ?? session?.currentProvider?.uuid;
 
-  useEffect(() => {
-    setStatus(statusLabels[statusSwitcherIndex].status);
-  }, [statusSwitcherIndex, statusLabels]);
+    if (defaultProvider) {
+      setValue('provider', defaultProvider, {
+        shouldValidate: true,
+      });
+    }
+  }, [providers, session?.currentProvider?.uuid, setValue]);
 
-  const handleSave = useCallback(async () => {
-    try {
-      setIsSubmitting(true);
-      // get queue entry by patient id
-      const patientQueueEntryResponse = await getCurrentPatientQueueByPatientUuid(
-        patientUuid,
-        sessionUser?.sessionLocation?.uuid,
-      );
+  const getCurrentQueueEntry = useCallback(async () => {
+    const response = await getCurrentPatientQueueByPatientUuid(patientUuid, sessionLocationUuid);
+    const queues = response?.data?.results?.[0]?.patientQueues ?? [];
 
-      const queues = patientQueueEntryResponse.data?.results[0]?.patientQueues;
-      const queueEntry = queues?.filter((item) => item?.patient?.uuid === patientUuid);
+    return queues.find((item) => item?.patient?.uuid === patientUuid);
+  }, [patientUuid, sessionLocationUuid]);
 
-      if (status === QueueStatus.Pending) {
-        if (queueEntry.length > 0) {
-          await updateQueueEntry(status, provider, queueEntry[0]?.uuid, 0, priorityComment, comment).then(() => {
-            showSnackbar({
-              title: t('moveToNextServicePoint', 'Move back your service point'),
-              kind: 'success',
-              subtitle: t('backToQueue', 'Successfully moved back patient to your service point'),
-              autoClose: true,
-            });
-            closeWorkspace();
-            handleMutate(`${restBaseUrl}/patientqueue`);
-            setIsSubmitting(false);
-
-            const roles = getSessionStore().getState().session?.user?.roles;
-            const roleName = roles[0]?.display;
-            if (roles && roles?.length > 0) {
-              if (roles?.filter((item) => item?.display === 'Organizational: Clinician').length > 0) {
-                navigate({
-                  to: `${window.getOpenmrsSpaBase()}home/clinical-room-patient-queues`,
-                });
-              } else if (roleName === 'Triage') {
-                navigate({
-                  to: `${window.getOpenmrsSpaBase()}home/triage-patient-queues`,
-                });
-              } else {
-                navigate({ to: `${window.getOpenmrsSpaBase()}home` });
-              }
-            }
-          });
-        }
+  const handleSave = useCallback(
+    async (formValues: CreateQueueEntryFormData) => {
+      if (!providerUuid) {
+        showNotification({
+          title: t('missingProvider', 'Missing provider'),
+          kind: 'error',
+          description: t(
+            'missingProviderDescription',
+            'Unable to move this patient because no provider was found for the current user.',
+          ),
+          millis: 3000,
+        });
+        return;
       }
 
-      if (status === QueueStatus.Completed) {
-        if (queueEntry.length > 0) {
+      setIsSubmitting(true);
+
+      try {
+        const currentQueueEntry = queueEntry?.uuid ? queueEntry : await getCurrentQueueEntry();
+
+        if (!currentQueueEntry?.uuid) {
+          showNotification({
+            title: t('queueEntryNotFound', 'Queue entry not found'),
+            kind: 'error',
+            description: t('queueEntryNotFoundDescription', 'No active queue entry was found for this patient.'),
+            millis: 3000,
+          });
+          return;
+        }
+
+        if (formValues.status === QueueStatus.Pending) {
+          await updateQueueEntry(
+            QueueStatus.Pending,
+            providerUuid,
+            currentQueueEntry.uuid,
+            formValues.priority,
+            formValues.priorityComment,
+            formValues.comment ?? '',
+          );
+
+          showSnackbar({
+            title: t('moveToNextServicePoint', 'Move back to your service point'),
+            kind: 'success',
+            subtitle: t('backToQueue', 'Successfully moved patient back to your service point.'),
+            autoClose: true,
+          });
+        }
+
+        if (formValues.status === QueueStatus.Completed) {
+          if (!formValues.locationTo) {
+            showNotification({
+              title: t('missingServicePoint', 'Missing service point'),
+              kind: 'error',
+              description: t('selectNextServicePointDescription', 'Please choose the next service point.'),
+              millis: 3000,
+            });
+            return;
+          }
+
           await updateQueueEntry(
             QueueStatus.Completed,
-            provider,
-            queueEntry[0]?.uuid,
-            contentSwitcherIndex,
-            priorityComment,
-            comment,
+            providerUuid,
+            currentQueueEntry.uuid,
+            formValues.priority,
+            formValues.priorityComment,
+            formValues.comment ?? '',
           );
 
           const request: NewQueuePayload = {
             patient: patientUuid,
-            provider: selectedProvider ?? '',
-            locationFrom: sessionUser?.sessionLocation?.uuid,
-            locationTo: selectedNextQueueLocation,
+            provider: formValues.provider ?? '',
+            locationFrom: sessionLocationUuid,
+            locationTo: formValues.locationTo,
             status: QueueStatus.Pending,
-            priority: contentSwitcherIndex,
-            priorityComment: priorityComment,
-            comment: comment,
-            queueRoom: selectedNextQueueLocation,
+            priority: formValues.priority,
+            priorityComment: formValues.priorityComment,
+            comment: formValues.comment ?? '',
+            queueRoom: formValues.locationTo,
           };
 
           const createQueueResponse = await addQueueEntry(request);
 
-          const response = await updateQueueEntry(
+          await updateQueueEntry(
             QueueStatus.Pending,
-            provider,
+            providerUuid,
             createQueueResponse.data?.uuid,
-            contentSwitcherIndex,
-            priorityComment,
-            comment,
+            formValues.priority,
+            formValues.priorityComment,
+            formValues.comment ?? '',
           );
 
-          if (response.status === 200) {
-            showSnackbar({
-              title: t('moveToNextServicePoint', 'Move to next service point'),
-              kind: 'success',
-              subtitle: t('movetonextservicepoint', 'Moved to next service point successfully'),
-              autoClose: true,
-            });
-            handleMutate(`${restBaseUrl}/patientqueue`);
-            closeWorkspace();
-            setIsSubmitting(false);
-            // view patient summary
-            // navigate({ to: `\${openmrsSpaBase}/home` });
-            const roles = getSessionStore().getState().session?.user?.roles;
-            const roleName = roles[0]?.display;
-            if (roles && roles?.length > 0) {
-              if (roles?.filter((item) => item?.display === 'Organizational: Clinician').length > 0) {
-                navigate({
-                  to: `${window.getOpenmrsSpaBase()}home/clinical-room-patient-queues`,
-                });
-              } else if (roleName === 'Triage') {
-                navigate({
-                  to: `${window.getOpenmrsSpaBase()}home/triage-patient-queues`,
-                });
-              } else {
-                navigate({ to: `${window.getOpenmrsSpaBase()}home` });
-              }
-            }
-          }
+          showSnackbar({
+            title: t('moveToNextServicePoint', 'Move to next service point'),
+            kind: 'success',
+            subtitle: t('moveToNextServicePointSuccessfully', 'Moved to next service point successfully.'),
+            autoClose: true,
+          });
         }
+
+        handleMutate(`${restBaseUrl}/patientqueue`);
+        handleMutate(`${restBaseUrl}/queuestatistics`);
+
+        closeWorkspace();
+
+        navigate({
+          to: getPostMoveRoute(),
+        });
+      } catch (error) {
+        const errorMessages = extractErrorMessagesFromResponse(error);
+
+        showNotification({
+          title: t('moveToNextServicePointError', 'Error moving to next service point'),
+          kind: 'error',
+          critical: true,
+          description:
+            errorMessages.length > 0 ? errorMessages.join(', ') : t('unexpectedError', 'An unexpected error occurred'),
+          millis: 3000,
+        });
+
+        handleMutate(`${restBaseUrl}/patientqueue`);
+      } finally {
+        setIsSubmitting(false);
       }
-    } catch (error) {
-      setIsSubmitting(false);
-      const errorMessages = extractErrorMessagesFromResponse(error);
-      showNotification({
-        title: t('moveToNextServicePoint', 'Error moving to next service point'),
-        kind: 'error',
-        critical: true,
-        description: errorMessages.join(','),
-        millis: 3000,
-      });
-      handleMutate(`${restBaseUrl}/patientqueue`);
-      closeWorkspace();
-    }
-  }, [
-    closeWorkspace,
-    contentSwitcherIndex,
-    patientUuid,
-    priorityComment,
-    provider,
-    selectedNextQueueLocation,
-    selectedProvider,
-    sessionUser?.sessionLocation?.uuid,
-    status,
-    comment,
-    t,
-  ]);
+    },
+    [closeWorkspace, getCurrentQueueEntry, patientUuid, providerUuid, queueEntry, sessionLocationUuid, t],
+  );
+
+  const isInitialLoading = isFetchingProvider || isFetchingQueueEntry;
+
+  const disableSubmit =
+    isInitialLoading ||
+    isSubmitting ||
+    !providerUuid ||
+    !isValid ||
+    (shouldShowNextServicePointFields && (!selectedNextQueueLocation || Boolean(errorLoadingQueueRooms)));
 
   return (
     <div className={styles.container}>
-      {isLoading && <InlineLoading description={'Fetching Provider..'} />}
+      {isInitialLoading ? (
+        <InlineLoading
+          className={styles.inlineLoading}
+          description={t('loadingMoveDetails', 'Loading move details...')}
+        />
+      ) : null}
 
       <div className={styles.body}>
-        {Object.keys(errors).length > 0 && (
-          <div className={styles.errorMessage}>
-            <ul>
-              {Object.entries(errors).map(([key, error]) => (
-                <li key={key}>
-                  {key}: {error?.message}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        {Object.keys(errors).length > 0 ? (
+          <InlineNotification
+            className={styles.errorNotification}
+            kind="error"
+            lowContrast
+            title={t('formValidationError', 'Please review the form')}
+            subtitle={t('formValidationErrorDescription', 'Some required information is missing or invalid.')}
+          />
+        ) : null}
+
         <section className={styles.section}>
-          <div className={styles.sectionTitle}>{t('priority', 'Priority')}</div>
+          <h4 className={styles.sectionTitle}>{t('priority', 'Priority')}</h4>
+
           <Controller
             name="priorityComment"
             control={control}
             render={({ field }) => (
               <>
                 <ContentSwitcher
-                  {...field}
                   size="md"
-                  selectedIndex={contentSwitcherIndex}
+                  selectedIndex={priorityIndex}
                   className={styles.contentSwitcher}
                   onChange={({ index }) => {
-                    field.onChange(priorityLabels[index]);
-                    setContentSwitcherIndex(index);
+                    const selectedIndex = Number(index ?? 0);
+                    setPriorityIndex(selectedIndex);
+                    field.onChange(PRIORITY_LABELS[selectedIndex]);
                   }}
                 >
-                  {priorityLabels.map((label, index) => (
+                  {PRIORITY_LABELS.map((label) => (
                     <Switch
-                      key={index}
-                      name={label.toLowerCase().replace(/\s+/g, '')}
-                      text={t(label.toLowerCase(), label)}
+                      key={label}
+                      name={label.toLowerCase().replace(/\s+/g, '-')}
+                      text={t(label.toLowerCase().replace(/\s+/g, ''), label)}
                     />
                   ))}
                 </ContentSwitcher>
-                {errors.priorityComment && <p className={styles.errorMessage}>{errors.priorityComment.message}</p>}
+
+                {errors.priorityComment ? (
+                  <p className={styles.errorMessage}>{errors.priorityComment.message}</p>
+                ) : null}
               </>
             )}
           />
         </section>
 
         <section className={styles.section}>
-          <div className={styles.sectionTitle}>{t('status', 'Status')}</div>
+          <h4 className={styles.sectionTitle}>{t('status', 'Status')}</h4>
+
           <Controller
             name="status"
             control={control}
             render={({ field }) => (
               <>
                 <ContentSwitcher
-                  {...field}
                   size="md"
-                  selectedIndex={statusSwitcherIndex}
+                  selectedIndex={statusIndex}
                   className={styles.contentSwitcher}
                   onChange={({ index }) => {
-                    field.onChange(statusLabels[index].status);
-                    setStatusSwitcherIndex(index);
+                    const selectedIndex = Number(index ?? 0);
+                    setStatusIndex(selectedIndex);
+                    field.onChange(STATUS_OPTIONS[selectedIndex].status);
                   }}
                 >
-                  {statusLabels.map((status, index) => (
+                  {STATUS_OPTIONS.map((option) => (
                     <Switch
-                      key={index}
-                      name={status.label.toLowerCase().replace(/\s+/g, '')}
-                      text={t(status.label.toLowerCase(), status.label)}
+                      key={option.status}
+                      name={option.label.toLowerCase().replace(/\s+/g, '-')}
+                      text={t(option.label.toLowerCase().replace(/\s+/g, ''), option.label)}
                     />
                   ))}
                 </ContentSwitcher>
-                {errors.status && <p className={styles.errorMessage}>{errors.status.message}</p>}
+
+                {errors.status ? <p className={styles.errorMessage}>{errors.status.message}</p> : null}
               </>
             )}
           />
         </section>
 
-        {status === QueueStatus.Completed && (
+        {shouldShowNextServicePointFields ? (
           <>
             <section className={styles.section}>
-              <div className={styles.sectionTitle}>{t('nextServicePoint', 'Next service point')}</div>
+              <h4 className={styles.sectionTitle}>{t('nextServicePoint', 'Next service point')}</h4>
+
               <ResponsiveWrapper isTablet={isTablet}>
                 <Controller
                   name="locationTo"
                   control={control}
-                  defaultValue={queueRoomLocations[0]?.uuid || sessionUser?.sessionLocation?.uuid}
                   render={({ field }) => (
                     <Select
-                      {...field}
                       id="nextQueueLocation"
-                      name="nextQueueLocation"
                       labelText=""
-                      disabled={errorLoadingQueueRooms}
+                      disabled={Boolean(errorLoadingQueueRooms)}
                       invalid={!!errors.locationTo}
                       invalidText={errors.locationTo?.message}
-                      value={field.value}
-                      onChange={(e) => {
-                        const selectedValue = e.target.value;
-                        field.onChange(selectedValue);
-                        setSelectedNextQueueLocation(selectedValue);
-                      }}
+                      value={field.value ?? ''}
+                      onChange={(event) => field.onChange(event.target.value)}
                     >
-                      {!field.value && (
-                        <SelectItem value="" text={t('selectNextServicePoint', 'Choose next service point')} />
-                      )}
+                      <SelectItem value="" text={t('selectNextServicePoint', 'Choose next service point')} />
 
                       {queueRoomLocations.map(({ uuid, display }) => (
                         <SelectItem key={uuid} value={uuid} text={display} />
@@ -424,64 +530,73 @@ const MoveToNextServicePointForm: React.FC<
                   )}
                 />
 
-                {errorLoadingQueueRooms && (
+                {errorLoadingQueueRooms ? (
                   <InlineNotification
                     className={styles.errorNotification}
                     kind="error"
+                    lowContrast
                     title={t('errorFetchingQueueRooms', 'Error fetching queue rooms')}
-                    subtitle={errorLoadingQueueRooms}
-                    onClick={() => {}}
+                    subtitle={
+                      typeof errorLoadingQueueRooms === 'string'
+                        ? errorLoadingQueueRooms
+                        : t('errorFetchingQueueRoomsDescription', 'Unable to fetch queue rooms.')
+                    }
                   />
-                )}
+                ) : null}
               </ResponsiveWrapper>
             </section>
+
             <section className={styles.section}>
-              <div className={styles.sectionTitle}>{t('selectAProvider', 'Select a provider')}</div>
+              <h4 className={styles.sectionTitle}>{t('selectAProvider', 'Select a provider')}</h4>
+
               <ResponsiveWrapper isTablet={isTablet}>
                 <Controller
                   name="provider"
                   control={control}
-                  defaultValue={providers[0]?.uuid || sessionUser?.currentProvider?.uuid}
                   render={({ field }) => (
                     <Select
-                      {...field}
-                      labelText={''}
                       id="providers-list"
-                      name="providers-list"
-                      disabled={isLoading}
+                      labelText=""
+                      disabled={isLoadingProviders || !selectedNextQueueLocation}
                       invalid={!!errors.provider}
                       invalidText={errors.provider?.message}
-                      value={field.value}
-                      onChange={(event) => {
-                        field.onChange(event.target.value);
-                        setSelectedProvider(event.target.value);
-                      }}
+                      value={field.value ?? ''}
+                      onChange={(event) => field.onChange(event.target.value)}
                     >
-                      {!field.value ? <SelectItem text={t('selectProvider', 'choose a provider')} value="" /> : null}
+                      <SelectItem text={t('selectProvider', 'Choose a provider')} value="" />
+
                       {providers.map((provider) => (
-                        <SelectItem key={provider.uuid} text={provider.display} value={provider.uuid}>
-                          {provider.display}
-                        </SelectItem>
+                        <SelectItem key={provider.uuid} text={provider.display} value={provider.uuid} />
                       ))}
                     </Select>
                   )}
                 />
 
-                {errorLoadingProviders && (
+                {isLoadingProviders ? (
+                  <InlineLoading
+                    className={styles.inlineLoading}
+                    description={t('loadingProviders', 'Loading providers...')}
+                  />
+                ) : null}
+
+                {errorLoadingProviders ? (
                   <InlineNotification
                     className={styles.errorNotification}
                     kind="error"
-                    title={t('errorFetchingQueueRooms', 'Error fetching providers')}
-                    subtitle={t('errorLoadingPatientWorkspace', 'Error loading patient workspace {{errorMessage}}', {
-                      errorMessage: errorLoadingProviders?.message,
-                    })}
-                    onClick={() => {}}
+                    lowContrast
+                    title={t('errorFetchingProviders', 'Error fetching providers')}
+                    subtitle={t(
+                      'errorLoadingProvidersDescription',
+                      'Unable to fetch providers for the selected service point.',
+                    )}
                   />
-                )}
+                ) : null}
               </ResponsiveWrapper>
             </section>
+
             <section className={styles.section}>
-              <div className={styles.sectionTitle}>{t('notes', 'Notes')}</div>
+              <h4 className={styles.sectionTitle}>{t('notes', 'Notes')}</h4>
+
               <ResponsiveWrapper isTablet={isTablet}>
                 <Controller
                   name="comment"
@@ -496,42 +611,40 @@ const MoveToNextServicePointForm: React.FC<
                       invalidText={errors.comment?.message}
                       maxCount={500}
                       enableCounter
-                      value={field.value}
-                      onChange={(e) => {
-                        field.onChange(e.target.value);
-                        setComment(e.target.value);
-                      }}
                     />
                   )}
                 />
               </ResponsiveWrapper>
             </section>
           </>
-        )}
+        ) : null}
       </div>
+
       <ButtonSet className={styles.buttonSet}>
-        <Button kind="secondary" onClick={() => closeWorkspace()} className={styles.button}>
+        <Button kind="secondary" onClick={closeWorkspace} className={styles.button} disabled={isSubmitting}>
           {t('cancel', 'Cancel')}
         </Button>
-        {isSubmitting ? (
-          <InlineLoading description={'Submitting...'} />
-        ) : (
-          <Button
-            disabled={!provider || isLoading || isSubmitting}
-            type="submit"
-            onClick={handleSubmit(handleSave)}
-            className={styles.button}
-          >
-            {status === QueueStatus.Pending ? 'Save' : 'Move to the next queue room'}
-          </Button>
-        )}
+
+        <Button disabled={disableSubmit} type="button" onClick={handleSubmit(handleSave)} className={styles.button}>
+          {isSubmitting ? (
+            <InlineLoading description={`${t('submitting', 'Submitting')}...`} />
+          ) : selectedStatus === QueueStatus.Pending ? (
+            t('save', 'Save')
+          ) : (
+            t('moveToNextQueueRoom', 'Move to the next queue room')
+          )}
+        </Button>
       </ButtonSet>
     </div>
   );
 };
 
-function ResponsiveWrapper({ children, isTablet }) {
-  return isTablet ? <Layer>{children}</Layer> : <div>{children}</div>;
+function ResponsiveWrapper({ children, isTablet }: ResponsiveWrapperProps) {
+  return isTablet ? (
+    <Layer className={styles.responsiveLayer}>{children}</Layer>
+  ) : (
+    <div className={styles.responsiveWrapper}>{children}</div>
+  );
 }
 
 export default MoveToNextServicePointForm;

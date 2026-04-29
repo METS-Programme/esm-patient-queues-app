@@ -3,41 +3,72 @@
 @use '@openmrs/esm-styleguide/src/vars' as *;
 
 .container {
+    background-color: $ui-background;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     height: 100%;
-}
-
-.button {
-    display: flex;
-    align-content: flex-start;
-    align-items: baseline;
-    min-width: 50%;
-}
-
-.buttonSet {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
+    min-height: 0;
 }
 
 .body {
-    padding: 1rem;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: spacing.$spacing-05;
 }
 
-section {
-    margin: spacing.$spacing-03;
+.section {
+    margin-bottom: spacing.$spacing-06;
 }
 
 .sectionTitle {
     @include type.type-style('heading-compact-02');
+
     color: $text-02;
-    margin-bottom: spacing.$spacing-04;
+    margin: 0 0 spacing.$spacing-04;
+}
+
+.contentSwitcher {
+    width: 100%;
+}
+
+.responsiveWrapper,
+.responsiveLayer {
+    width: 100%;
+}
+
+.inlineLoading {
+    margin: spacing.$spacing-03 0;
+}
+
+.errorNotification {
+    margin: spacing.$spacing-03 0;
 }
 
 .errorMessage {
-    color: #d93025;
-    font-size: 0.875rem;
-    margin-top: 0.25rem;
+    @include type.type-style('body-compact-01');
+
+    color: $danger;
+    margin-top: spacing.$spacing-03;
+}
+
+.buttonSet {
+    width: 100%;
+    flex-shrink: 0;
+    border-top: 1px solid $ui-03;
+}
+
+.button {
+    min-width: 50%;
+    justify-content: center;
+}
+
+@media (max-width: 672px) {
+    .body {
+        padding: spacing.$spacing-04;
+    }
+
+    .section {
+        margin-bottom: spacing.$spacing-05;
+    }
 }

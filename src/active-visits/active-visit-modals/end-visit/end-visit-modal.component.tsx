@@ -133,7 +133,7 @@ const EndVisitConfirmation: React.FC<EndVisitConfirmationProps> = ({ closeModal,
         }
       }
 
-      const queueResponse = await getCurrentPatientQueueByPatientUuid(patientUuid, sessionLocationUuid);
+      const queueResponse = await getCurrentPatientQueueByPatientUuid(patientUuid, sessionLocationUuid ?? '');
 
       const queues = queueResponse?.data?.results?.[0]?.patientQueues ?? [];
       const queueEntry = queues.find((item) => item?.patient?.uuid === patientUuid);
