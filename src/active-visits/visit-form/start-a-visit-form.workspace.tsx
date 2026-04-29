@@ -22,13 +22,11 @@ import {
   useLayoutType,
   usePatient,
   useSession,
-  useVisitTypes,
 } from '@openmrs/esm-framework';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 
-import { useQueueRoomLocations } from '../../hooks/useQueueRooms';
 import { type PatientQueueConfig } from '../../config-schema';
 import { QueueStatus, handleMutate } from '../../utils/utils';
 import {
@@ -36,6 +34,7 @@ import {
   checkCurrentVisit,
   checkInQueue,
   useProviders,
+  useQueueRoomLocations,
 } from '../resources/patient-queues.resource';
 import {
   type CreateQueueEntryFormData,
@@ -73,7 +72,6 @@ const StartVisitForm: React.FC<
   const isTablet = useLayoutType() === 'tablet';
   const session = useSession();
   const config = useConfig<PatientQueueConfig>();
-  const allVisitTypes = useVisitTypes();
   const { patient } = usePatient(patientUuid);
 
   const sessionLocationUuid = session?.sessionLocation?.uuid ?? '';
@@ -166,7 +164,7 @@ const StartVisitForm: React.FC<
       setIsSubmitting(true);
 
       try {
-        const existingVisit = await checkCurrentVisit(patientUuid);
+        const existingVisit = await checkCurrentVisit(patientUuid ?? '');
 
         if (existingVisit) {
           showNotification({
@@ -180,7 +178,7 @@ const StartVisitForm: React.FC<
         const { handleCreateExtraVisitInfo, attributes: extraAttributes } = extraVisitInfo ?? {};
 
         const request: NewCheckInPayload = {
-          patient: patientUuid,
+          patient: patientUuid!,
           provider: formValues.provider,
           currentLocation: sessionLocationUuid,
           locationTo: formValues.locationTo,

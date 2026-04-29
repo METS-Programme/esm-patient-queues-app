@@ -19,7 +19,7 @@ import queueWaitingTileComponent from './components/queue-tiles/queue-waiting-ti
 import moveToNextServicePointWorkspace from './active-visits/workspace/move-to-next-service-point.workspace';
 
 // modal
-import endVisitConfirmationModalComponent from './active-visits/end-visit/end-visit-modal.component';
+import endVisitConfirmationModalComponent from './active-visits/active-visit-modals/end-visit/end-visit-modal.component';
 
 import endVisitActionButtonComponent from './active-visits/action-buttons/end-visit-action-button.component';
 

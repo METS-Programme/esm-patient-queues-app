@@ -16,7 +16,7 @@ interface PickPatientActionMenuProps {
 const PickQueuePatientActionButton: React.FC<PickPatientActionMenuProps> = ({ queueEntry, closeModal }) => {
   const { t } = useTranslation();
   const { sessionLocation, user } = useSession() || {};
-  const sessionLocationId = sessionLocation?.uuid;
+  const sessionLocationId = sessionLocation?.uuid ?? '';
   const providerId = user?.systemId;
 
   useEffect(() => {

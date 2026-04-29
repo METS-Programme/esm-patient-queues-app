@@ -1,12 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  Button,
-  Form,
-  InlineLoading,
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
-} from '@carbon/react';
+import { Button, Form, InlineLoading, ModalBody, ModalFooter, ModalHeader } from '@carbon/react';
 import {
   getCoreTranslation,
   getSessionStore,
@@ -15,24 +8,19 @@ import {
   restBaseUrl,
   showNotification,
   showSnackbar,
+  updateVisit,
   useSession,
   useVisit,
 } from '@openmrs/esm-framework';
 import { useTranslation } from 'react-i18next';
 
+import styles from './end-visit-modal.scss';
 import {
   getCareProvider,
   getCurrentPatientQueueByPatientUuid,
   updateQueueEntry,
-  updateVisit,
-} from '../resources/patient-queues.resource';
-import {
-  QueueStatus,
-  extractErrorMessagesFromResponse,
-  handleMutate,
-} from '../../utils/utils';
-
-import styles from './end-visit-modal.scss';
+} from '../../resources/patient-queues.resource';
+import { extractErrorMessagesFromResponse, QueueStatus, handleMutate } from '../../../utils/utils';
 
 interface EndVisitConfirmationProps {
   patientUuid: string;
@@ -67,10 +55,7 @@ function getPostEndVisitRoute(hasQueueEntry: boolean) {
   return `${spaBase}home`;
 }
 
-const EndVisitConfirmation: React.FC<EndVisitConfirmationProps> = ({
-  closeModal,
-  patientUuid,
-}) => {
+const EndVisitConfirmation: React.FC<EndVisitConfirmationProps> = ({ closeModal, patientUuid }) => {
   const { t } = useTranslation();
   const session = useSession();
   const { activeVisit } = useVisit(patientUuid);
@@ -101,10 +86,7 @@ const EndVisitConfirmation: React.FC<EndVisitConfirmationProps> = ({
         showNotification({
           title: t('providerNotFound', 'Provider not found'),
           kind: 'warning',
-          description: t(
-            'providerNotFoundDescription',
-            'No provider account is linked to the current user.',
-          ),
+          description: t('providerNotFoundDescription', 'No provider account is linked to the current user.'),
         });
         return;
       }
@@ -118,9 +100,7 @@ const EndVisitConfirmation: React.FC<EndVisitConfirmationProps> = ({
         kind: 'error',
         critical: true,
         description:
-          errorMessages.length > 0
-            ? errorMessages.join(', ')
-            : t('unexpectedError', 'An unexpected error occurred'),
+          errorMessages.length > 0 ? errorMessages.join(', ') : t('unexpectedError', 'An unexpected error occurred'),
       });
     } finally {
       setIsFetchingProvider(false);
@@ -141,9 +121,7 @@ const EndVisitConfirmation: React.FC<EndVisitConfirmationProps> = ({
       if (activeVisit?.uuid) {
         const endVisitPayload = {
           location: activeVisit.location?.uuid,
-          startDatetime: activeVisit.startDatetime
-            ? parseDate(activeVisit.startDatetime)
-            : undefined,
+          startDatetime: activeVisit.startDatetime ? parseDate(activeVisit.startDatetime) : undefined,
           visitType: activeVisit.visitType?.uuid,
           stopDatetime: new Date(),
         };
@@ -155,10 +133,7 @@ const EndVisitConfirmation: React.FC<EndVisitConfirmationProps> = ({
         }
       }
 
-      const queueResponse = await getCurrentPatientQueueByPatientUuid(
-        patientUuid,
-        sessionLocationUuid,
-      );
+      const queueResponse = await getCurrentPatientQueueByPatientUuid(patientUuid, sessionLocationUuid);
 
       const queues = queueResponse?.data?.results?.[0]?.patientQueues ?? [];
       const queueEntry = queues.find((item) => item?.patient?.uuid === patientUuid);
@@ -191,9 +166,7 @@ const EndVisitConfirmation: React.FC<EndVisitConfirmationProps> = ({
       }
 
       showSnackbar({
-        title: hasEndedVisit
-          ? t('visitEnded', 'Visit ended')
-          : t('queueCompleted', 'Queue completed'),
+        title: hasEndedVisit ? t('visitEnded', 'Visit ended') : t('queueCompleted', 'Queue completed'),
         subtitle: t(
           hasEndedVisit && hasEndedQueue
             ? 'visitAndQueueEndedSuccessfully'
@@ -222,21 +195,12 @@ const EndVisitConfirmation: React.FC<EndVisitConfirmationProps> = ({
         kind: 'error',
         critical: true,
         description:
-          errorMessages.length > 0
-            ? errorMessages.join(', ')
-            : t('unexpectedError', 'An unexpected error occurred'),
+          errorMessages.length > 0 ? errorMessages.join(', ') : t('unexpectedError', 'An unexpected error occurred'),
       });
     } finally {
       setIsEndingVisit(false);
     }
-  }, [
-    activeVisit,
-    closeModal,
-    patientUuid,
-    providerUuid,
-    sessionLocationUuid,
-    t,
-  ]);
+  }, [activeVisit, closeModal, patientUuid, providerUuid, sessionLocationUuid, t]);
 
   return (
     <Form className={styles.form}>
@@ -254,32 +218,16 @@ const EndVisitConfirmation: React.FC<EndVisitConfirmationProps> = ({
         ) : null}
 
         <p className={styles.bodyText}>
-          {t(
-            'endVisitText',
-            "Are you sure you want to end this visit? This action can't be undone.",
-          )}
+          {t('endVisitText', "Are you sure you want to end this visit? This action can't be undone.")}
         </p>
       </ModalBody>
 
       <ModalFooter className={styles.modalFooter}>
-        <Button
-          size="lg"
-          kind="secondary"
-          onClick={closeModal}
-          disabled={isEndingVisit}
-          type="button"
-        >
+        <Button size="lg" kind="secondary" onClick={closeModal} disabled={isEndingVisit} type="button">
           {getCoreTranslation('cancel')}
         </Button>
 
-        <Button
-          autoFocus
-          kind="danger"
-          onClick={handleEndVisit}
-          size="lg"
-          disabled={!canSubmit}
-          type="button"
-        >
+        <Button autoFocus kind="danger" onClick={handleEndVisit} size="lg" disabled={!canSubmit} type="button">
           {isEndingVisit ? (
             <InlineLoading description={t('endingVisit', 'Ending visit...')} />
           ) : (

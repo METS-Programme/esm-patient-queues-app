@@ -16,7 +16,7 @@ import { extractErrorMessagesFromResponse, handleMutate } from '../../../utils/u
 import { type PatientQueue } from '../../../types/patient-queues';
 import { getCareProvider, updateQueueEntry } from '../../resources/patient-queues.resource';
 
-import styles from './pick-queue-patient-dialog.scss';
+import styles from './pick-queue-patient-modal.scss';
 
 interface PickQueuePatientDialogProps {
   queueEntry?: PatientQueue;
