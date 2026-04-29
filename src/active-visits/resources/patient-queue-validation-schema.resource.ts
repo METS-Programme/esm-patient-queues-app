@@ -18,6 +18,7 @@ export const createQueueEntrySchema = z.object({
   priorityComment: z.string().min(1, 'Priority is required'),
   comment: z.string().optional(),
   queueRoom: z.string().optional(),
+  visitType: z.string().optional(),
 });
 
 export type CreateQueueEntryFormData = z.infer<typeof createQueueEntrySchema>;
