@@ -1,7 +1,7 @@
-import { type QueueRoomsResponse } from '../../hooks/useQueueRooms';
 import useSWR from 'swr';
 import { openmrsFetch, restBaseUrl, useSession } from '@openmrs/esm-framework';
 import { type PatientQueue } from '../../types/patient-queues';
+import { type QueueRoomsResponse } from '../../types';
 
 export function usePatientQueuesByParentLocation(status: string) {
   const session = useSession();

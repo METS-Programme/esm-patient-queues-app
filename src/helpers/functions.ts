@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import { type PatientQueue } from '../types/patient-queues';
 
 export const buildStatusString = (status: string): string => {
   if (!status) {
@@ -50,12 +51,12 @@ export const getTagColor = (waitTime: string): string => {
   }
 };
 
-export const getProviderTagColor = (entryProvider: string, loggedInProviderName: string): string => {
-  if (entryProvider === loggedInProviderName) {
-    return '#07a862';
-  } else {
-    return '#942509';
+export const getProviderTagColor = (entryProvider?: string, loggedInProviderName?: string): string => {
+  if (!entryProvider || !loggedInProviderName) {
+    return '#525252';
   }
+
+  return entryProvider === loggedInProviderName ? '#07a862' : '#942509';
 };
 
 export type amPm = 'AM' | 'PM';
@@ -74,13 +75,7 @@ export const convertTime12to24 = (time12h: string, timeFormat: amPm): string[] =
   return [hours];
 };
 
-interface Queue {
-  status: string;
-  dateCreated?: string;
-  dateChanged?: string;
-}
-
-export const getWaitTimeInMinutes = (queue: Queue | null): number | null => {
+export const getWaitTimeInMinutes = (queue: PatientQueue | null): number | null => {
   if (!queue) return null;
 
   if (queue.status === 'COMPLETED') {

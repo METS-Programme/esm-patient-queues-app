@@ -27,7 +27,6 @@ import { useTranslation } from 'react-i18next';
 
 import { QueueStatus, extractErrorMessagesFromResponse, handleMutate } from '../../utils/utils';
 import {
-  type NewQueuePayload,
   addQueueEntry,
   getCareProvider,
   getCurrentPatientQueueByPatientUuid,
@@ -44,6 +43,7 @@ import { getSelectedPatientQueueUuid } from '../../helpers/helpers';
 import { type PatientQueue } from '../../types/patient-queues';
 
 import styles from './move-to-next-service-point.scss';
+import { type NewQueuePayload } from '../../types';
 
 type MoveToNextServicePointFormProps = {
   patientUuid: string;
@@ -94,9 +94,12 @@ const MoveToNextServicePointForm: React.FC<
     MoveToNextServicePointFormProps,
     {
       startVisitWorkspaceName: string;
+      patientUuid: string;
     }
   >
-> = ({ closeWorkspace, workspaceProps: { patientUuid } }) => {
+> = ({ closeWorkspace, workspaceProps }) => {
+  const patientUuid = workspaceProps?.patientUuid;
+
   const { t } = useTranslation();
   const isTablet = useLayoutType() === 'tablet';
   const session = useSession();
@@ -272,10 +275,10 @@ const MoveToNextServicePointForm: React.FC<
   }, [providers, session?.currentProvider?.uuid, setValue]);
 
   const getCurrentQueueEntry = useCallback(async () => {
-    const response = await getCurrentPatientQueueByPatientUuid(patientUuid, sessionLocationUuid);
+    const response = await getCurrentPatientQueueByPatientUuid(patientUuid ?? '', sessionLocationUuid);
     const queues = response?.data?.results?.[0]?.patientQueues ?? [];
 
-    return queues.find((item) => item?.patient?.uuid === patientUuid);
+    return queues.find((item: PatientQueue) => item?.patient?.uuid === patientUuid);
   }, [patientUuid, sessionLocationUuid]);
 
   const handleSave = useCallback(
@@ -313,7 +316,7 @@ const MoveToNextServicePointForm: React.FC<
             QueueStatus.Pending,
             providerUuid,
             currentQueueEntry.uuid,
-            formValues.priority,
+            formValues.priority ?? 0,
             formValues.priorityComment,
             formValues.comment ?? '',
           );
@@ -341,18 +344,18 @@ const MoveToNextServicePointForm: React.FC<
             QueueStatus.Completed,
             providerUuid,
             currentQueueEntry.uuid,
-            formValues.priority,
+            formValues.priority ?? 0,
             formValues.priorityComment,
             formValues.comment ?? '',
           );
 
           const request: NewQueuePayload = {
-            patient: patientUuid,
+            patient: patientUuid ?? '',
             provider: formValues.provider ?? '',
             locationFrom: sessionLocationUuid,
             locationTo: formValues.locationTo,
             status: QueueStatus.Pending,
-            priority: formValues.priority,
+            priority: formValues.priority ?? 0,
             priorityComment: formValues.priorityComment,
             comment: formValues.comment ?? '',
             queueRoom: formValues.locationTo,
@@ -364,7 +367,7 @@ const MoveToNextServicePointForm: React.FC<
             QueueStatus.Pending,
             providerUuid,
             createQueueResponse.data?.uuid,
-            formValues.priority,
+            formValues.priority ?? 0,
             formValues.priorityComment,
             formValues.comment ?? '',
           );
@@ -621,7 +624,7 @@ const MoveToNextServicePointForm: React.FC<
       </div>
 
       <ButtonSet className={styles.buttonSet}>
-        <Button kind="secondary" onClick={closeWorkspace} className={styles.button} disabled={isSubmitting}>
+        <Button kind="secondary" onClick={() => closeWorkspace} className={styles.button} disabled={isSubmitting}>
           {t('cancel', 'Cancel')}
         </Button>
 

@@ -39,6 +39,7 @@ import QueueLauncher from '../components/queue-launcher/queue-launcher.component
 import SummaryTile, { type SummaryTileValue } from '../components/summary-tiles/summary-tile.component';
 
 import styles from './queue-reception-home.scss';
+import { type PatientQueue } from '../types/patient-queues';
 
 type QueueEntry = {
   uuid: string;
@@ -149,7 +150,7 @@ const ReceptionHome: React.FC = () => {
 
   const filteredPatientQueueEntries = useMemo(() => {
     return [...items]
-      .filter((entry: QueueEntry) => {
+      .filter((entry: PatientQueue) => {
         if (!normalizedSearchTerm) {
           return true;
         }
@@ -166,7 +167,7 @@ const ReceptionHome: React.FC = () => {
           status.includes(normalizedSearchTerm)
         );
       })
-      .sort((a: QueueEntry, b: QueueEntry) => {
+      .sort((a: PatientQueue, b: PatientQueue) => {
         return new Date(a.dateCreated ?? 0).getTime() - new Date(b.dateCreated ?? 0).getTime();
       });
   }, [items, normalizedSearchTerm]);
@@ -180,7 +181,7 @@ const ReceptionHome: React.FC = () => {
   }, []);
 
   const tableRows = useMemo(() => {
-    return filteredPatientQueueEntries.map((queueEntry: QueueEntry) => {
+    return filteredPatientQueueEntries.map((queueEntry: PatientQueue) => {
       const normalizedStatus = queueEntry.status?.toLowerCase() ?? 'pending';
       const waitTimeInMinutes = getWaitTimeInMinutes(queueEntry);
 

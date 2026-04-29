@@ -25,8 +25,6 @@ import endVisitActionButtonComponent from './active-visits/action-buttons/end-vi
 
 import deathNotificationActionsButtonComponent from './active-visits/action-buttons/death-notification-actions-button.component';
 
-export const importTranslation = require.context('../translations', false, /.json$/, 'lazy');
-
 const options = {
   featureName: 'patient queues',
   moduleName,

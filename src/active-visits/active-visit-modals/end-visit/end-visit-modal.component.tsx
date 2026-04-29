@@ -21,6 +21,7 @@ import {
   updateQueueEntry,
 } from '../../resources/patient-queues.resource';
 import { extractErrorMessagesFromResponse, QueueStatus, handleMutate } from '../../../utils/utils';
+import { type PatientQueue } from '../../../types/patient-queues';
 
 interface EndVisitConfirmationProps {
   patientUuid: string;
@@ -126,7 +127,7 @@ const EndVisitConfirmation: React.FC<EndVisitConfirmationProps> = ({ closeModal,
           stopDatetime: new Date(),
         };
 
-        const visitResponse = await updateVisit(activeVisit.uuid, endVisitPayload);
+        const visitResponse = await updateVisit(activeVisit.uuid, endVisitPayload, new AbortController());
 
         if (visitResponse.status === 200) {
           hasEndedVisit = true;
@@ -136,7 +137,7 @@ const EndVisitConfirmation: React.FC<EndVisitConfirmationProps> = ({ closeModal,
       const queueResponse = await getCurrentPatientQueueByPatientUuid(patientUuid, sessionLocationUuid ?? '');
 
       const queues = queueResponse?.data?.results?.[0]?.patientQueues ?? [];
-      const queueEntry = queues.find((item) => item?.patient?.uuid === patientUuid);
+      const queueEntry = queues.find((item: PatientQueue) => item?.patient?.uuid === patientUuid);
 
       if (queueEntry?.uuid) {
         await updateQueueEntry(

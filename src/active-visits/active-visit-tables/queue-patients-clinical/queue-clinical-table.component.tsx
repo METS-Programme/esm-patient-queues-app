@@ -37,48 +37,24 @@ import {
   usePatientQueuePages,
 } from '../../resources/patient-queues.resource';
 import PickQueuePatientActionButton from '../../action-buttons/pick-queue-patient-action.component';
+import { type PatientQueue } from '../../../types/patient-queues';
 
 interface ActiveVisitsTableProps {
   status: string;
 }
-
-type QueueEntry = {
-  uuid: string;
-  visitNumber?: string;
-  status?: string;
-  dateCreated?: string;
-  patient?: {
-    uuid?: string;
-    person?: {
-      display?: string;
-    };
-  };
-  provider?: {
-    identifier?: string;
-    display?: string;
-  };
-  locationTo?: {
-    display?: string;
-  };
-  queueRoom?: {
-    tags?: Array<{
-      uuid: string;
-    }>;
-  };
-};
 
 const WAIT_TIME_REFRESH_INTERVAL_MS = 60_000;
 
 function getStatusMatcher(status: string) {
   switch (status) {
     case QueueStatus.Completed:
-      return (entry: QueueEntry) => entry.status === 'COMPLETED';
+      return (entry: PatientQueue) => entry.status === 'COMPLETED';
 
     case QueueStatus.Pending:
-      return (entry: QueueEntry) => entry.status === 'PENDING' || entry.status === 'PICKED';
+      return (entry: PatientQueue) => entry.status === 'PENDING' || entry.status === 'PICKED';
 
     default:
-      return (entry: QueueEntry) => !status || entry.status === status;
+      return (entry: PatientQueue) => !status || entry.status === status;
   }
 }
 
@@ -162,14 +138,14 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
 
     return [...items]
       .filter(matchesStatus)
-      .filter((entry: QueueEntry) => {
+      .filter((entry: PatientQueue) => {
         if (!clinicalRoomTag) {
           return true;
         }
 
         return entry.queueRoom?.tags?.some((tag) => tag.uuid === clinicalRoomTag);
       })
-      .filter((entry: QueueEntry) => {
+      .filter((entry: PatientQueue) => {
         if (!normalizedSearchTerm) {
           return true;
         }
@@ -188,7 +164,7 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
           statusName.includes(normalizedSearchTerm)
         );
       })
-      .sort((a: QueueEntry, b: QueueEntry) => {
+      .sort((a: PatientQueue, b: PatientQueue) => {
         const aIsPicked = a.status === 'PICKED';
         const bIsPicked = b.status === 'PICKED';
 
@@ -213,7 +189,7 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
   }, []);
 
   const tableRows = useMemo(() => {
-    return filteredPatientQueueEntries.map((queueEntry: QueueEntry) => {
+    return filteredPatientQueueEntries.map((queueEntry: PatientQueue) => {
       const normalizedStatus = queueEntry.status?.toLowerCase() ?? '';
       const waitTimeInMinutes = getWaitTimeInMinutes(queueEntry);
 

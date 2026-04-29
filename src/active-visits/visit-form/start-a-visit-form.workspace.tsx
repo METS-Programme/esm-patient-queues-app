@@ -30,7 +30,6 @@ import { useTranslation } from 'react-i18next';
 import { type PatientQueueConfig } from '../../config-schema';
 import { QueueStatus, handleMutate } from '../../utils/utils';
 import {
-  type NewCheckInPayload,
   checkCurrentVisit,
   checkInQueue,
   useProviders,
@@ -42,6 +41,7 @@ import {
 } from '../resources/patient-queue-validation-schema.resource';
 
 import styles from './start-a-visit-form.scss';
+import { type NewCheckInPayload } from '../../types';
 
 type VisitFormProps = {
   patientUuid: string;
@@ -187,7 +187,7 @@ const StartVisitForm: React.FC<
           priorityComment: formValues.priorityComment ?? '',
           visitComment: formValues.comment ?? '',
           queueRoom: formValues.locationTo,
-          visitType: formValues.visitType,
+          visitType: formValues.visitType ?? '',
           ...(config.showExtraVisitAttributesSlot && extraAttributes && Array.isArray(extraAttributes)
             ? { attributes: extraAttributes }
             : {}),

@@ -1,11 +1,11 @@
-import { Group, InProgress } from '@carbon/react/icons';
 import React from 'react';
+import { Group, InProgress, CheckmarkOutline } from '@carbon/react/icons';
 import { restBaseUrl } from '@openmrs/esm-framework';
 import debounce from 'lodash-es/debounce';
 import { mutate } from 'swr';
 
 interface FieldError {
-  message: string;
+  message?: string;
   [key: string]: unknown;
 }
 
@@ -24,7 +24,7 @@ export interface ErrorObject {
 }
 
 export interface StatusIconProps {
-  status: 'pending' | 'picked' | 'completed';
+  status?: 'pending' | 'picked' | 'completed' | string;
 }
 
 export interface QueueStatusOptions {
@@ -45,6 +45,33 @@ export enum QueueEnumStatus {
   PENDING = 'PENDING',
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function getErrorObject(error: unknown): ErrorObject {
+  if (error instanceof Error) {
+    return {
+      message: error.message,
+    };
+  }
+
+  if (!isRecord(error)) {
+    return {
+      message: String(error),
+    };
+  }
+
+  const message = typeof error.message === 'string' ? error.message : undefined;
+
+  const responseBody = isRecord(error.responseBody) ? (error.responseBody as ResponseBody) : undefined;
+
+  return {
+    message,
+    responseBody,
+  };
+}
+
 const refreshDashboardMetrics = debounce(
   () =>
     mutate((key) => typeof key === 'string' && key.startsWith(`${restBaseUrl}/patientqueue`), undefined, {
@@ -57,26 +84,41 @@ export const handleMutate = (url: string): void => {
   mutate((key) => typeof key === 'string' && key.startsWith(url), undefined, {
     revalidate: true,
   });
+
   refreshDashboardMetrics();
 };
 
-export function extractErrorMessagesFromResponse(errorObject: ErrorObject): string[] {
-  const fieldErrors = errorObject?.responseBody?.error?.fieldErrors;
-  if (!fieldErrors) {
-    const message = errorObject?.responseBody?.error?.message ?? errorObject?.message;
-    return message ? [message] : [];
+export function extractErrorMessagesFromResponse(error: unknown): string[] {
+  const errorObject = getErrorObject(error);
+
+  const fieldErrors = errorObject.responseBody?.error?.fieldErrors;
+
+  if (fieldErrors) {
+    const messages = Object.values(fieldErrors)
+      .flatMap((errors) => errors.map((fieldError) => fieldError.message))
+      .filter((message): message is string => Boolean(message));
+
+    if (messages.length > 0) {
+      return messages;
+    }
   }
-  return Object.values(fieldErrors).flatMap((errors: FieldError[]) => errors.map((error) => error.message));
+
+  const message = errorObject.responseBody?.error?.message ?? errorObject.message;
+
+  return message ? [message] : [];
 }
 
 function StatusIcon({ status }: StatusIconProps): JSX.Element | null {
-  switch (status) {
-    case 'pending':
+  switch (status?.toLowerCase()) {
+    case QueueStatus.Pending:
       return <InProgress size={16} />;
-    case 'picked':
+
+    case QueueStatus.Picked:
       return <Group size={16} />;
-    case 'completed':
-      return <Group size={16} />;
+
+    case QueueStatus.Completed:
+      return <CheckmarkOutline size={16} />;
+
     default:
       return null;
   }

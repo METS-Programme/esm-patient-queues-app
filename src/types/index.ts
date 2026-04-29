@@ -347,3 +347,92 @@ export interface Links {
   uri: string;
   resourcealias: string;
 }
+
+export interface NewQueuePayload {
+  patient: string;
+  provider: string;
+  locationFrom: string;
+  locationTo: string;
+  status: string;
+  priority: number;
+  priorityComment: string;
+  comment: string;
+  queueRoom: string;
+}
+
+export interface NewCheckInPayload {
+  patient: string;
+  provider: string;
+  currentLocation: string;
+  locationTo: string;
+  patientStatus: string;
+  priority: number;
+  priorityComment: string;
+  visitComment: string;
+  queueRoom: string;
+  visitType: string;
+  attributes?: Array<{
+    attributeType: string;
+    value: string;
+  }>;
+}
+
+export interface LocationResponse {
+  uuid: string;
+  display: string;
+  name: string;
+  description: any;
+  address1: any;
+  address2: any;
+  cityVillage: any;
+  stateProvince: any;
+  country: any;
+  postalCode: any;
+  latitude: any;
+  longitude: any;
+  countyDistrict: any;
+  address3: any;
+  address4: any;
+  address5: any;
+  address6: any;
+  tags: Tag[];
+  parentLocation: ParentLocation;
+  childLocations: ChildLocation[];
+  retired: boolean;
+  attributes: any[];
+  address7: any;
+  address8: any;
+  address9: any;
+  address10: any;
+  address11: any;
+  address12: any;
+  address13: any;
+  address14: any;
+  address15: any;
+  links: Link[];
+  resourceVersion: string;
+}
+
+export interface Tag {
+  uuid: string;
+  display: string;
+  links: Link[];
+}
+
+export interface Link {
+  rel: string;
+  uri: string;
+  resourceAlias: string;
+}
+
+export interface ParentLocation {
+  uuid: string;
+  display: string;
+  links: Link[];
+}
+
+export interface ChildLocation {
+  uuid: string;
+  display: string;
+  links: Link[];
+}
