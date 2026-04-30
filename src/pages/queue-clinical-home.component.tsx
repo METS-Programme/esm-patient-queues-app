@@ -23,7 +23,9 @@ const ClinicalRoomHome: React.FC = () => {
     <main className={styles.page}>
       <PatientQueueHeader title={t('clinicalRoom', 'Clinical Room')} />
 
-      <QueueSummaryTiles />
+      <section className={styles.summarySection} aria-label={t('clinicalSummary', 'Clinical summary')}>
+        <QueueSummaryTiles />
+      </section>
 
       {canViewDashboard ? (
         <section className={styles.container} aria-label={t('clinicalDashboard', 'Clinical dashboard')}>

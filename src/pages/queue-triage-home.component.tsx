@@ -23,7 +23,9 @@ const TriageHome: React.FC = () => {
     <main className={styles.page}>
       <PatientQueueHeader title={t('triage', 'Triage')} />
 
-      <QueueSummaryTiles />
+      <section className={styles.summarySection} aria-label={t('triageSummary', 'Triage summary')}>
+        <QueueSummaryTiles />
+      </section>
 
       {canViewDashboard ? (
         <section className={styles.container} aria-label={t('triageDashboard', 'Triage dashboard')}>
