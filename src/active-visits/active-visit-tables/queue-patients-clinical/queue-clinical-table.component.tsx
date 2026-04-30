@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   DataTable,
   DataTableSkeleton,
+  Dropdown,
   Pagination,
   Table,
   TableBody,
@@ -43,7 +44,37 @@ interface ActiveVisitsTableProps {
   status: string;
 }
 
+type FilterOption = {
+  id: string;
+  text: string;
+};
+
 const WAIT_TIME_REFRESH_INTERVAL_MS = 60_000;
+const ALL_FILTER_VALUE = 'all';
+const UNASSIGNED_PROVIDER_VALUE = 'unassigned';
+
+const WAIT_TIME_FILTERS: FilterOption[] = [
+  {
+    id: ALL_FILTER_VALUE,
+    text: 'All wait times',
+  },
+  {
+    id: 'under-30',
+    text: 'Under 30 min',
+  },
+  {
+    id: '30-to-60',
+    text: '30–60 min',
+  },
+  {
+    id: 'over-60',
+    text: 'Over 60 min',
+  },
+];
+
+function normalizeSearchValue(value?: string) {
+  return value?.trim().toLowerCase() ?? '';
+}
 
 function getStatusMatcher(status: string) {
   switch (status) {
@@ -68,6 +99,73 @@ function getOpenmrsPatientChartUrl(patientUuid?: string) {
   return `${spaBase}/patient/${patientUuid}/chart`;
 }
 
+function matchesSearchFilter(entry: PatientQueue, normalizedSearchTerm: string) {
+  if (!normalizedSearchTerm) {
+    return true;
+  }
+
+  const searchableValues = [
+    entry.patient?.person?.display,
+    entry.visitNumber,
+    entry.provider?.display,
+    entry.locationTo?.display,
+    entry.status,
+  ];
+
+  return searchableValues.some((value) => normalizeSearchValue(value).includes(normalizedSearchTerm));
+}
+
+function matchesProviderFilter(entry: PatientQueue, selectedProvider: FilterOption | null) {
+  if (!selectedProvider || selectedProvider.id === ALL_FILTER_VALUE) {
+    return true;
+  }
+
+  if (selectedProvider.id === UNASSIGNED_PROVIDER_VALUE) {
+    return !entry.provider?.uuid && !entry.provider?.identifier;
+  }
+
+  return entry.provider?.uuid === selectedProvider.id || entry.provider?.identifier === selectedProvider.id;
+}
+
+function matchesLocationFilter(entry: PatientQueue, selectedLocation: FilterOption | null) {
+  if (!selectedLocation || selectedLocation.id === ALL_FILTER_VALUE) {
+    return true;
+  }
+
+  return entry.locationTo?.uuid === selectedLocation.id;
+}
+
+function matchesWaitTimeFilter(entry: PatientQueue, selectedWaitTime: FilterOption) {
+  const waitTimeInMinutes = getWaitTimeInMinutes(entry) ?? 0;
+
+  switch (selectedWaitTime.id) {
+    case 'under-30':
+      return waitTimeInMinutes < 30;
+    case '30-to-60':
+      return waitTimeInMinutes >= 30 && waitTimeInMinutes <= 60;
+    case 'over-60':
+      return waitTimeInMinutes > 60;
+    case ALL_FILTER_VALUE:
+    default:
+      return true;
+  }
+}
+
+function sortClinicalQueueEntries(a: PatientQueue, b: PatientQueue) {
+  const aIsPicked = a.status === 'PICKED';
+  const bIsPicked = b.status === 'PICKED';
+
+  if (aIsPicked && !bIsPicked) {
+    return -1;
+  }
+
+  if (!aIsPicked && bIsPicked) {
+    return 1;
+  }
+
+  return new Date(a.dateCreated ?? 0).getTime() - new Date(b.dateCreated ?? 0).getTime();
+}
+
 const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status }) => {
   const { t } = useTranslation();
   const session = useSession();
@@ -77,6 +175,9 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
   const [searchTerm, setSearchTerm] = useState('');
   const [waitTimeRefreshTick, setWaitTimeRefreshTick] = useState(0);
   const [showAllLocations, setShowAllLocations] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<FilterOption | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<FilterOption | null>(null);
+  const [selectedWaitTime, setSelectedWaitTime] = useState<FilterOption>(WAIT_TIME_FILTERS[0]);
 
   const sessionLocationUuid = session?.sessionLocation?.uuid ?? '';
   const sessionUserSystemId = session?.user?.systemId ?? '';
@@ -106,22 +207,16 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
     setCurrentPage,
   } = usePatientQueuePages(activeLocationUuid, status, showAllLocations, true);
 
-  const handleToggleChange = useCallback((checked: boolean) => {
-    setShowAllLocations(checked);
-  }, []);
-
-  const handleSearchInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-  }, []);
-
-  const normalizedSearchTerm = useMemo(() => searchTerm.trim().toLowerCase(), [searchTerm]);
+  const normalizedSearchTerm = useMemo(() => {
+    return normalizeSearchValue(searchTerm);
+  }, [searchTerm]);
 
   const tableHeaders = useMemo(
     () => [
       { header: t('visitNumber', 'Visit Number'), key: 'visitNumber' },
       { header: t('name', 'Name'), key: 'name' },
       { header: t('provider', 'Provider'), key: 'provider' },
-      { header: t('currentlocation', 'Current Location'), key: 'location' },
+      { header: t('currentLocation', 'Current Location'), key: 'location' },
       { header: t('status', 'Status'), key: 'status' },
       { header: t('waitTime', 'Wait time'), key: 'waitTime' },
       { header: t('actions', 'Actions'), key: 'actions' },
@@ -132,6 +227,66 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
   const visibleHeaders = useMemo(() => {
     return tableHeaders.filter((header) => showAllLocations || header.key !== 'provider');
   }, [showAllLocations, tableHeaders]);
+
+  const providerFilterOptions = useMemo<FilterOption[]>(() => {
+    const providers = new Map<string, string>();
+    let hasUnassignedProvider = false;
+
+    items.forEach((entry: PatientQueue) => {
+      const providerId = entry.provider?.uuid ?? entry.provider?.identifier;
+      const providerName = entry.provider?.display;
+
+      if (providerId && providerName) {
+        providers.set(providerId, providerName);
+        return;
+      }
+
+      hasUnassignedProvider = true;
+    });
+
+    return [
+      {
+        id: ALL_FILTER_VALUE,
+        text: t('allProviders', 'All providers'),
+      },
+      ...(hasUnassignedProvider
+        ? [
+            {
+              id: UNASSIGNED_PROVIDER_VALUE,
+              text: t('unassigned', 'Unassigned'),
+            },
+          ]
+        : []),
+      ...Array.from(providers.entries()).map(([id, text]) => ({
+        id,
+        text,
+      })),
+    ];
+  }, [items, t]);
+
+  const locationFilterOptions = useMemo<FilterOption[]>(() => {
+    const locations = new Map<string, string>();
+
+    items.forEach((entry: PatientQueue) => {
+      const locationUuid = entry.locationTo?.uuid;
+      const locationName = entry.locationTo?.display;
+
+      if (locationUuid && locationName) {
+        locations.set(locationUuid, locationName);
+      }
+    });
+
+    return [
+      {
+        id: ALL_FILTER_VALUE,
+        text: t('allLocations', 'All locations'),
+      },
+      ...Array.from(locations.entries()).map(([id, text]) => ({
+        id,
+        text,
+      })),
+    ];
+  }, [items, t]);
 
   const filteredPatientQueueEntries = useMemo(() => {
     const matchesStatus = getStatusMatcher(status);
@@ -146,39 +301,15 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
         return entry.queueRoom?.tags?.some((tag) => tag.uuid === clinicalRoomTag);
       })
       .filter((entry: PatientQueue) => {
-        if (!normalizedSearchTerm) {
-          return true;
-        }
-
-        const patientName = entry.patient?.person?.display?.toLowerCase() ?? '';
-        const visitNumber = entry.visitNumber?.toLowerCase() ?? '';
-        const providerName = entry.provider?.display?.toLowerCase() ?? '';
-        const locationName = entry.locationTo?.display?.toLowerCase() ?? '';
-        const statusName = entry.status?.toLowerCase() ?? '';
-
         return (
-          patientName.includes(normalizedSearchTerm) ||
-          visitNumber.includes(normalizedSearchTerm) ||
-          providerName.includes(normalizedSearchTerm) ||
-          locationName.includes(normalizedSearchTerm) ||
-          statusName.includes(normalizedSearchTerm)
+          matchesSearchFilter(entry, normalizedSearchTerm) &&
+          matchesProviderFilter(entry, selectedProvider) &&
+          matchesLocationFilter(entry, selectedLocation) &&
+          matchesWaitTimeFilter(entry, selectedWaitTime)
         );
       })
-      .sort((a: PatientQueue, b: PatientQueue) => {
-        const aIsPicked = a.status === 'PICKED';
-        const bIsPicked = b.status === 'PICKED';
-
-        if (aIsPicked && !bIsPicked) {
-          return -1;
-        }
-
-        if (!aIsPicked && bIsPicked) {
-          return 1;
-        }
-
-        return new Date(a.dateCreated ?? 0).getTime() - new Date(b.dateCreated ?? 0).getTime();
-      });
-  }, [clinicalRoomTag, items, normalizedSearchTerm, status]);
+      .sort(sortClinicalQueueEntries);
+  }, [clinicalRoomTag, items, normalizedSearchTerm, selectedLocation, selectedProvider, selectedWaitTime, status]);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -272,6 +403,54 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
     });
   }, [filteredPatientQueueEntries, fromPage, sessionUserSystemId, showAllLocations, t]);
 
+  const handleToggleChange = useCallback(
+    (checked: boolean) => {
+      setShowAllLocations(checked);
+      setCurrentPage(1);
+    },
+    [setCurrentPage],
+  );
+
+  const handleSearchInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchTerm(event.target.value);
+      setCurrentPage(1);
+    },
+    [setCurrentPage],
+  );
+
+  const handleProviderFilterChange = useCallback(
+    ({ selectedItem }: { selectedItem: FilterOption | null }) => {
+      setSelectedProvider(selectedItem);
+      setCurrentPage(1);
+    },
+    [setCurrentPage],
+  );
+
+  const handleLocationFilterChange = useCallback(
+    ({ selectedItem }: { selectedItem: FilterOption | null }) => {
+      setSelectedLocation(selectedItem);
+      setCurrentPage(1);
+    },
+    [setCurrentPage],
+  );
+
+  const handleWaitTimeFilterChange = useCallback(
+    ({ selectedItem }: { selectedItem: FilterOption | null }) => {
+      setSelectedWaitTime(selectedItem ?? WAIT_TIME_FILTERS[0]);
+      setCurrentPage(1);
+    },
+    [setCurrentPage],
+  );
+
+  const handlePaginationChange = useCallback(
+    ({ page, pageSize }: { page: number; pageSize: number }) => {
+      setCurrentPage(page);
+      setPageSize(pageSize);
+    },
+    [setCurrentPage, setPageSize],
+  );
+
   const renderEmptyState = () => (
     <div className={styles.tileContainer}>
       <Tile className={styles.tile}>
@@ -309,6 +488,44 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
         </div>
 
         <div className={styles.tableActions}>
+          {showAllLocations ? (
+            <Dropdown
+              id={`clinical-provider-filter-${status}`}
+              className={styles.filter}
+              items={providerFilterOptions}
+              itemToString={(item) => item?.text ?? ''}
+              label={t('provider', 'Provider')}
+              selectedItem={selectedProvider ?? providerFilterOptions[0]}
+              size="sm"
+              titleText=""
+              onChange={handleProviderFilterChange}
+            />
+          ) : null}
+
+          <Dropdown
+            id={`clinical-location-filter-${status}`}
+            className={styles.filter}
+            items={locationFilterOptions}
+            itemToString={(item) => item?.text ?? ''}
+            label={t('location', 'Location')}
+            selectedItem={selectedLocation ?? locationFilterOptions[0]}
+            size="sm"
+            titleText=""
+            onChange={handleLocationFilterChange}
+          />
+
+          <Dropdown
+            id={`clinical-wait-time-filter-${status}`}
+            className={styles.filter}
+            items={WAIT_TIME_FILTERS}
+            itemToString={(item) => item?.text ?? ''}
+            label={t('waitTime', 'Wait time')}
+            selectedItem={selectedWaitTime}
+            size="sm"
+            titleText=""
+            onChange={handleWaitTimeFilterChange}
+          />
+
           <TableToolbarSearch
             expanded
             className={styles.search}
@@ -336,8 +553,8 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
         rows={tableRows}
         useZebraStyles
       >
-        {({ rows, headers, getHeaderProps, getTableProps }) => (
-          <TableContainer className={styles.tableContainer}>
+        {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => (
+          <TableContainer className={styles.tableContainer} {...getTableContainerProps()}>
             <Table {...getTableProps()} className={styles.activeVisitsTable}>
               <TableHead>
                 <TableRow>
@@ -351,7 +568,7 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
 
               <TableBody>
                 {rows.map((row) => (
-                  <TableRow key={row.id}>
+                  <TableRow {...getRowProps({ row })}>
                     {row.cells.map((cell) => (
                       <TableCell key={cell.id}>{cell.value?.content ?? cell.value}</TableCell>
                     ))}
@@ -371,10 +588,7 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
         pageSize={currentPageSize}
         pageSizes={pageSizes}
         totalItems={totalCount ?? 0}
-        onChange={({ page, pageSize }) => {
-          setCurrentPage(page);
-          setPageSize(pageSize);
-        }}
+        onChange={handlePaginationChange}
       />
     </div>
   );

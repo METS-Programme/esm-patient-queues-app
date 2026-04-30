@@ -15,7 +15,7 @@
 
 .tableControls {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: spacing.$spacing-05;
   margin: spacing.$spacing-05 spacing.$spacing-05 0;
@@ -29,6 +29,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  padding-top: spacing.$spacing-02;
 }
 
 .tableTitle {
@@ -49,8 +50,18 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: spacing.$spacing-05;
+  gap: spacing.$spacing-03;
   min-width: 0;
+  flex-wrap: wrap;
+}
+
+.filter {
+  min-width: 12rem;
+  max-width: 14rem;
+}
+
+.filter :global(.cds--list-box__field) {
+  background-color: $ui-02;
 }
 
 .search {
@@ -63,6 +74,7 @@
 }
 
 .toggle {
+  min-width: 13rem;
   margin: 0;
   white-space: nowrap;
 }
@@ -113,8 +125,8 @@
 }
 
 .patientName {
-  font-weight: 600;
   color: $ui-05;
+  font-weight: 600;
 }
 
 .statusContainer {
@@ -134,15 +146,15 @@
 }
 
 .tileContainer {
-  background-color: $ui-01;
-  border-top: 1px solid $ui-03;
   padding: spacing.$spacing-11 0;
+  border-top: 1px solid $ui-03;
+  background-color: $ui-01;
 }
 
 .tile {
-  margin: auto;
   width: fit-content;
   max-width: 24rem;
+  margin: auto;
   border: 1px solid $ui-03;
   background-color: $ui-02;
 }
@@ -194,23 +206,22 @@
   }
 
   .tableActions {
-    align-items: flex-start;
+    align-items: stretch;
     flex-direction: column;
     gap: spacing.$spacing-03;
+    width: 100%;
+  }
+
+  .filter,
+  .search,
+  .toggle {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .tableContainer {
     margin: 0 spacing.$spacing-03;
-  }
-
-  .search {
-    max-width: 100%;
-    min-width: 0;
-    width: 100%;
-  }
-
-  .toggle {
-    margin: 0;
   }
 
   .paginationOverride {
