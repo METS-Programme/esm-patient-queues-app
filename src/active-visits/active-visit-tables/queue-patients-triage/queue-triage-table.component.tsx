@@ -15,6 +15,7 @@ import {
   Tag,
   Tile,
   Toggle,
+  type TableToolbarSearchProps,
 } from '@carbon/react';
 import { useTranslation } from 'react-i18next';
 import { isDesktop, useConfig, useLayoutType, useSession } from '@openmrs/esm-framework';
@@ -411,9 +412,18 @@ const ActiveTriageVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status }) =
     [setCurrentPage],
   );
 
-  const handleSearchInputChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      setSearchTerm(event.target.value);
+  const handleSearchInputChange: TableToolbarSearchProps['onChange'] = useCallback(
+    (event, value) => {
+      const nextValue =
+        typeof value === 'string'
+          ? value
+          : typeof event === 'string'
+            ? event
+            : event && 'target' in event
+              ? event.target.value
+              : '';
+
+      setSearchTerm(nextValue);
       setCurrentPage(1);
     },
     [setCurrentPage],
@@ -529,7 +539,7 @@ const ActiveTriageVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status }) =
           <TableToolbarSearch
             expanded
             className={styles.search}
-            onChange={() => handleSearchInputChange}
+            onChange={handleSearchInputChange}
             placeholder={t('searchThisList', 'Search this list')}
             size="sm"
             value={searchTerm}
