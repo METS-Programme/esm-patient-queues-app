@@ -41,22 +41,6 @@ import SummaryTile, { type SummaryTileValue } from '../components/summary-tiles/
 import styles from './queue-reception-home.scss';
 import { type PatientQueue } from '../types/patient-queues';
 
-type QueueEntry = {
-  uuid: string;
-  visitNumber?: string;
-  status?: string;
-  dateCreated?: string;
-  patient?: {
-    uuid?: string;
-    person?: {
-      display?: string;
-    };
-  };
-  locationTo?: {
-    display?: string;
-  };
-};
-
 const WAIT_TIME_REFRESH_INTERVAL_MS = 60_000;
 
 function getOpenmrsPatientEditUrl(patientUuid?: string) {

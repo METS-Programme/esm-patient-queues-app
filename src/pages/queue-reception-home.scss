@@ -5,6 +5,8 @@
 .page {
     background-color: $ui-background;
     min-height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .cardContainer {
@@ -12,9 +14,9 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: spacing.$spacing-03;
-    width: 100%;
     padding: 0 spacing.$spacing-05 spacing.$spacing-07 spacing.$spacing-03;
     margin-top: -(spacing.$spacing-03);
+    /* Fixes extra space at top */
 }
 
 .cardContainer>* {
@@ -54,8 +56,8 @@
     margin: 0 spacing.$spacing-05;
     padding: spacing.$spacing-04 spacing.$spacing-05;
     border: 1px solid $ui-03;
-    border-bottom: 0;
     background-color: $ui-01;
+    border-bottom: 0;
 }
 
 .tableTitleGroup {
@@ -66,7 +68,6 @@
 
 .tableTitle {
     @include type.type-style('heading-compact-02');
-
     color: $ui-05;
     margin: 0;
     white-space: nowrap;
@@ -74,7 +75,6 @@
 
 .tableSubtitle {
     @include type.type-style('body-compact-01');
-
     color: $text-02;
     margin: spacing.$spacing-01 0 0;
 }
@@ -109,14 +109,12 @@
 
     th {
         @include type.type-style('label-01');
-
         color: $text-02;
         background-color: $ui-02;
     }
 
     td {
         @include type.type-style('body-compact-01');
-
         vertical-align: middle;
     }
 
@@ -185,14 +183,12 @@
 
 .content {
     @include type.type-style('heading-compact-02');
-
     color: $ui-05;
     margin-bottom: spacing.$spacing-03;
 }
 
 .helper {
     @include type.type-style('body-compact-01');
-
     color: $text-02;
     margin: 0;
 }

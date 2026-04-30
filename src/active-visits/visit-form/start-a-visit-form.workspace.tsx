@@ -23,7 +23,7 @@ import {
   usePatient,
   useSession,
 } from '@openmrs/esm-framework';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 
@@ -90,11 +90,10 @@ const StartVisitForm: React.FC<
   const {
     handleSubmit,
     control,
-    watch,
     setValue,
     formState: { errors, isValid },
-  } = useForm({
-    mode: 'all',
+  } = useForm<CreateQueueEntryFormData>({
+    mode: 'onChange',
     resolver: zodResolver(createQueueEntrySchema),
     defaultValues: {
       status: QueueStatus.Pending,
@@ -106,7 +105,15 @@ const StartVisitForm: React.FC<
     },
   });
 
-  const selectedNextQueueLocation = watch('locationTo');
+  const selectedNextQueueLocation = useWatch({
+    control,
+    name: 'locationTo',
+  });
+
+  const selectedProvider = useWatch({
+    control,
+    name: 'provider',
+  });
 
   const {
     providers = [],
@@ -115,12 +122,15 @@ const StartVisitForm: React.FC<
   } = useProviders(selectedNextQueueLocation);
 
   useEffect(() => {
-    setValue('priorityComment', priorityLabels[contentSwitcherIndex], {
+    const nextPriority = PRIORITY_LEVELS[contentSwitcherIndex] ?? PRIORITY_LEVELS[0];
+    const nextPriorityComment = priorityLabels[contentSwitcherIndex] ?? priorityLabels[0];
+
+    setValue('priority', nextPriority, {
       shouldValidate: true,
       shouldDirty: true,
     });
 
-    setValue('priority', PRIORITY_LEVELS[contentSwitcherIndex] ?? PRIORITY_LEVELS[0], {
+    setValue('priorityComment', nextPriorityComment, {
       shouldValidate: true,
       shouldDirty: true,
     });
@@ -129,25 +139,51 @@ const StartVisitForm: React.FC<
   useEffect(() => {
     const defaultQueueRoom = queueRoomLocations?.[0]?.uuid;
 
-    if (defaultQueueRoom && !selectedNextQueueLocation) {
-      setValue('locationTo', defaultQueueRoom, {
-        shouldValidate: true,
-      });
+    if (!defaultQueueRoom || selectedNextQueueLocation) {
+      return;
     }
+
+    setValue('locationTo', defaultQueueRoom, {
+      shouldValidate: true,
+      shouldDirty: false,
+    });
   }, [queueRoomLocations, selectedNextQueueLocation, setValue]);
 
   useEffect(() => {
-    const defaultProvider = providers?.[0]?.uuid;
-
-    if (defaultProvider) {
-      setValue('provider', defaultProvider, {
+    if (!selectedNextQueueLocation) {
+      setValue('provider', '', {
         shouldValidate: true,
+        shouldDirty: false,
       });
+      return;
     }
-  }, [providers, setValue]);
+
+    const providerStillExists = providers.some((provider) => provider.uuid === selectedProvider);
+
+    if (selectedProvider && providerStillExists) {
+      return;
+    }
+
+    const defaultProvider = providers?.[0]?.uuid ?? '';
+
+    setValue('provider', defaultProvider, {
+      shouldValidate: true,
+      shouldDirty: false,
+    });
+  }, [providers, selectedNextQueueLocation, selectedProvider, setValue]);
 
   const onSubmit = useCallback(
     async (formValues: CreateQueueEntryFormData) => {
+      if (!patientUuid) {
+        showNotification({
+          title: t('missingPatient', 'Missing patient'),
+          kind: 'error',
+          critical: true,
+          description: t('missingPatientDescription', 'Unable to start a visit because the patient is missing.'),
+        });
+        return;
+      }
+
       if (!sessionLocationUuid) {
         showNotification({
           title: t('missingSessionLocation', 'Missing session location'),
@@ -164,7 +200,7 @@ const StartVisitForm: React.FC<
       setIsSubmitting(true);
 
       try {
-        const existingVisit = await checkCurrentVisit(patientUuid ?? '');
+        const existingVisit = await checkCurrentVisit(patientUuid);
 
         if (existingVisit) {
           showNotification({
@@ -178,17 +214,17 @@ const StartVisitForm: React.FC<
         const { handleCreateExtraVisitInfo, attributes: extraAttributes } = extraVisitInfo ?? {};
 
         const request: NewCheckInPayload = {
-          patient: patientUuid!,
+          patient: patientUuid,
           provider: formValues.provider,
           currentLocation: sessionLocationUuid,
           locationTo: formValues.locationTo,
           patientStatus: QueueStatus.Pending,
-          priority: formValues.priority ?? 0,
-          priorityComment: formValues.priorityComment ?? '',
+          priority: formValues.priority ?? PRIORITY_LEVELS[0],
+          priorityComment: formValues.priorityComment ?? priorityLabels[0],
           visitComment: formValues.comment ?? '',
           queueRoom: formValues.locationTo,
           visitType: formValues.visitType ?? '',
-          ...(config.showExtraVisitAttributesSlot && extraAttributes && Array.isArray(extraAttributes)
+          ...(config.showExtraVisitAttributesSlot && Array.isArray(extraAttributes)
             ? { attributes: extraAttributes }
             : {}),
         };
@@ -227,7 +263,15 @@ const StartVisitForm: React.FC<
         setIsSubmitting(false);
       }
     },
-    [closeWorkspace, config.showExtraVisitAttributesSlot, extraVisitInfo, patientUuid, sessionLocationUuid, t],
+    [
+      closeWorkspace,
+      config.showExtraVisitAttributesSlot,
+      extraVisitInfo,
+      patientUuid,
+      priorityLabels,
+      sessionLocationUuid,
+      t,
+    ],
   );
 
   const hasQueueRooms = queueRoomLocations.length > 0;
@@ -243,7 +287,7 @@ const StartVisitForm: React.FC<
     Boolean(errorLoadingProviders);
 
   return (
-    <div className={styles.container}>
+    <form className={styles.container} onSubmit={handleSubmit(onSubmit)}>
       <div className={styles.body}>
         {patient ? (
           <ExtensionSlot
@@ -282,7 +326,7 @@ const StartVisitForm: React.FC<
                     const selectedIndex = Number(index ?? 0);
 
                     setContentSwitcherIndex(selectedIndex);
-                    field.onChange(priorityLabels[selectedIndex]);
+                    field.onChange(priorityLabels[selectedIndex] ?? priorityLabels[0]);
                   }}
                 >
                   {priorityLabels.map((label) => (
@@ -340,7 +384,14 @@ const StartVisitForm: React.FC<
                   invalid={!!errors.locationTo}
                   invalidText={errors.locationTo?.message}
                   value={field.value ?? ''}
-                  onChange={(event) => field.onChange(event.target.value)}
+                  onChange={(event) => {
+                    field.onChange(event.target.value);
+
+                    setValue('provider', '', {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+                  }}
                 >
                   <SelectItem text={t('selectNextServicePoint', 'Choose next service point')} value="" />
 
@@ -458,13 +509,7 @@ const StartVisitForm: React.FC<
           {t('discard', 'Discard')}
         </Button>
 
-        <Button
-          className={styles.button}
-          disabled={disableSubmit}
-          kind="primary"
-          type="button"
-          onClick={() => handleSubmit(onSubmit)}
-        >
+        <Button className={styles.button} disabled={disableSubmit} kind="primary" type="submit">
           {isSubmitting ? (
             <InlineLoading description={`${t('saving', 'Saving')}...`} />
           ) : (
@@ -472,7 +517,7 @@ const StartVisitForm: React.FC<
           )}
         </Button>
       </ButtonSet>
-    </div>
+    </form>
   );
 };
 
