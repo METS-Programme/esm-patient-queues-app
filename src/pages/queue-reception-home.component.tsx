@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   DataTable,
   DataTableSkeleton,
+  Dropdown,
   Pagination,
   Table,
   TableBody,
@@ -14,16 +15,21 @@ import {
   Tag,
   Tile,
 } from '@carbon/react';
-import { useTranslation } from 'react-i18next';
 import { useSession } from '@openmrs/esm-framework';
 import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
 
+import EditActionsMenu from '../active-visits/action-buttons/edit-action-menu.components';
 import {
   getOriginFromPathName,
   useParentLocation,
   usePatientQueuePages,
 } from '../active-visits/resources/patient-queues.resource';
+import CheckInLauncher from '../components/check-in/check-in.component';
+import PatientQueueHeader from '../components/patient-queue-header/patient-queue-header.component';
 import { useServicePointCount } from '../components/patient-queue-metrics/clinic-metrics.resource';
+import QueueLauncher from '../components/queue-launcher/queue-launcher.component';
+import SummaryTile, { type SummaryTileValue } from '../components/summary-tiles/summary-tile.component';
 import {
   buildStatusString,
   formatWaitTime,
@@ -31,17 +37,37 @@ import {
   getWaitTimeInMinutes,
   trimVisitNumber,
 } from '../helpers/functions';
+import type { PatientQueue } from '../types/patient-queues';
 import StatusIcon from '../utils/utils';
-import EditActionsMenu from '../active-visits/action-buttons/edit-action-menu.components';
-import CheckInLauncher from '../components/check-in/check-in.component';
-import PatientQueueHeader from '../components/patient-queue-header/patient-queue-header.component';
-import QueueLauncher from '../components/queue-launcher/queue-launcher.component';
-import SummaryTile, { type SummaryTileValue } from '../components/summary-tiles/summary-tile.component';
 
 import styles from './queue-reception-home.scss';
-import { type PatientQueue } from '../types/patient-queues';
 
 const WAIT_TIME_REFRESH_INTERVAL_MS = 60_000;
+const ALL_FILTER_VALUE = 'all';
+
+type FilterOption = {
+  id: string;
+  text: string;
+};
+
+const WAIT_TIME_FILTERS: FilterOption[] = [
+  {
+    id: ALL_FILTER_VALUE,
+    text: 'All wait times',
+  },
+  {
+    id: 'under-30',
+    text: 'Under 30 min',
+  },
+  {
+    id: '30-to-60',
+    text: '30–60 min',
+  },
+  {
+    id: 'over-60',
+    text: 'Over 60 min',
+  },
+];
 
 function getOpenmrsPatientEditUrl(patientUuid?: string) {
   if (!patientUuid) {
@@ -53,25 +79,73 @@ function getOpenmrsPatientEditUrl(patientUuid?: string) {
   return `${spaBase}/patient/${patientUuid}/edit`;
 }
 
+function normalizeSearchValue(value?: string) {
+  return value?.trim().toLowerCase() ?? '';
+}
+
+function sortQueueEntriesByCreatedDate(a: PatientQueue, b: PatientQueue) {
+  return new Date(a.dateCreated ?? 0).getTime() - new Date(b.dateCreated ?? 0).getTime();
+}
+
+function matchesSearchFilter(entry: PatientQueue, normalizedSearchTerm: string) {
+  if (!normalizedSearchTerm) {
+    return true;
+  }
+
+  const searchableValues = [entry.patient?.person?.display, entry.visitNumber, entry.locationTo?.display, entry.status];
+
+  return searchableValues.some((value) => normalizeSearchValue(value).includes(normalizedSearchTerm));
+}
+
+function matchesStatusFilter(entry: PatientQueue, selectedStatus: FilterOption | null) {
+  if (!selectedStatus || selectedStatus.id === ALL_FILTER_VALUE) {
+    return true;
+  }
+
+  return entry.status === selectedStatus.id;
+}
+
+function matchesLocationFilter(entry: PatientQueue, selectedLocation: FilterOption | null) {
+  if (!selectedLocation || selectedLocation.id === ALL_FILTER_VALUE) {
+    return true;
+  }
+
+  return entry.locationTo?.uuid === selectedLocation.id;
+}
+
+function matchesWaitTimeFilter(entry: PatientQueue, selectedWaitTime: FilterOption) {
+  const waitTimeInMinutes = getWaitTimeInMinutes(entry) ?? 0;
+
+  switch (selectedWaitTime.id) {
+    case 'under-30':
+      return waitTimeInMinutes < 30;
+    case '30-to-60':
+      return waitTimeInMinutes >= 30 && waitTimeInMinutes <= 60;
+    case 'over-60':
+      return waitTimeInMinutes > 60;
+    case ALL_FILTER_VALUE:
+    default:
+      return true;
+  }
+}
+
 const ReceptionHome: React.FC = () => {
   const { t } = useTranslation();
   const session = useSession();
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<FilterOption | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<FilterOption | null>(null);
+  const [selectedWaitTime, setSelectedWaitTime] = useState<FilterOption>(WAIT_TIME_FILTERS[0]);
   const [waitTimeRefreshTick, setWaitTimeRefreshTick] = useState(0);
 
   const sessionLocationUuid = session?.sessionLocation?.uuid ?? '';
   const { location } = useParentLocation(sessionLocationUuid);
 
   const parentLocationUuid = location?.parentLocation?.uuid ?? sessionLocationUuid;
-
   const today = useMemo(() => dayjs().format('YYYY-MM-DD'), []);
 
   const { stats = [] } = useServicePointCount(parentLocationUuid, today, today);
-
-  const fromPage = useMemo(() => {
-    return getOriginFromPathName(window.location.pathname);
-  }, []);
 
   const {
     isLoading,
@@ -84,12 +158,12 @@ const ReceptionHome: React.FC = () => {
     setCurrentPage,
   } = usePatientQueuePages('', '');
 
-  const handleSearchInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
+  const fromPage = useMemo(() => {
+    return getOriginFromPathName(window.location.pathname);
   }, []);
 
   const normalizedSearchTerm = useMemo(() => {
-    return searchTerm.trim().toLowerCase();
+    return normalizeSearchValue(searchTerm);
   }, [searchTerm]);
 
   const summaryValues = useMemo<SummaryTileValue[]>(
@@ -113,7 +187,7 @@ const ReceptionHome: React.FC = () => {
         key: 'name',
       },
       {
-        header: t('currentlocation', 'Current Location'),
+        header: t('currentLocation', 'Current Location'),
         key: 'location',
       },
       {
@@ -132,37 +206,63 @@ const ReceptionHome: React.FC = () => {
     [t],
   );
 
+  const statusFilterOptions = useMemo<FilterOption[]>(() => {
+    const statuses = new Set<string>();
+
+    items.forEach((entry: PatientQueue) => {
+      if (entry.status) {
+        statuses.add(entry.status);
+      }
+    });
+
+    return [
+      {
+        id: ALL_FILTER_VALUE,
+        text: t('allStatuses', 'All statuses'),
+      },
+      ...Array.from(statuses).map((status) => ({
+        id: status,
+        text: buildStatusString(status.toLowerCase()),
+      })),
+    ];
+  }, [items, t]);
+
+  const locationFilterOptions = useMemo<FilterOption[]>(() => {
+    const locations = new Map<string, string>();
+
+    items.forEach((entry: PatientQueue) => {
+      const locationUuid = entry.locationTo?.uuid;
+      const locationName = entry.locationTo?.display;
+
+      if (locationUuid && locationName) {
+        locations.set(locationUuid, locationName);
+      }
+    });
+
+    return [
+      {
+        id: ALL_FILTER_VALUE,
+        text: t('allLocations', 'All locations'),
+      },
+      ...Array.from(locations.entries()).map(([id, text]) => ({
+        id,
+        text,
+      })),
+    ];
+  }, [items, t]);
+
   const filteredPatientQueueEntries = useMemo(() => {
     return [...items]
       .filter((entry: PatientQueue) => {
-        if (!normalizedSearchTerm) {
-          return true;
-        }
-
-        const patientName = entry.patient?.person?.display?.toLowerCase() ?? '';
-        const visitNumber = entry.visitNumber?.toLowerCase() ?? '';
-        const locationName = entry.locationTo?.display?.toLowerCase() ?? '';
-        const status = entry.status?.toLowerCase() ?? '';
-
         return (
-          patientName.includes(normalizedSearchTerm) ||
-          visitNumber.includes(normalizedSearchTerm) ||
-          locationName.includes(normalizedSearchTerm) ||
-          status.includes(normalizedSearchTerm)
+          matchesSearchFilter(entry, normalizedSearchTerm) &&
+          matchesStatusFilter(entry, selectedStatus) &&
+          matchesLocationFilter(entry, selectedLocation) &&
+          matchesWaitTimeFilter(entry, selectedWaitTime)
         );
       })
-      .sort((a: PatientQueue, b: PatientQueue) => {
-        return new Date(a.dateCreated ?? 0).getTime() - new Date(b.dateCreated ?? 0).getTime();
-      });
-  }, [items, normalizedSearchTerm]);
-
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setWaitTimeRefreshTick((previousTick) => previousTick + 1);
-    }, WAIT_TIME_REFRESH_INTERVAL_MS);
-
-    return () => window.clearInterval(intervalId);
-  }, []);
+      .sort(sortQueueEntriesByCreatedDate);
+  }, [items, normalizedSearchTerm, selectedLocation, selectedStatus, selectedWaitTime]);
 
   const tableRows = useMemo(() => {
     return filteredPatientQueueEntries.map((queueEntry: PatientQueue) => {
@@ -220,6 +320,54 @@ const ReceptionHome: React.FC = () => {
     });
   }, [filteredPatientQueueEntries, fromPage, t]);
 
+  const handleSearchInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchTerm(event.target.value);
+      setCurrentPage(1);
+    },
+    [setCurrentPage],
+  );
+
+  const handleStatusFilterChange = useCallback(
+    ({ selectedItem }: { selectedItem: FilterOption | null }) => {
+      setSelectedStatus(selectedItem);
+      setCurrentPage(1);
+    },
+    [setCurrentPage],
+  );
+
+  const handleLocationFilterChange = useCallback(
+    ({ selectedItem }: { selectedItem: FilterOption | null }) => {
+      setSelectedLocation(selectedItem);
+      setCurrentPage(1);
+    },
+    [setCurrentPage],
+  );
+
+  const handleWaitTimeFilterChange = useCallback(
+    ({ selectedItem }: { selectedItem: FilterOption | null }) => {
+      setSelectedWaitTime(selectedItem ?? WAIT_TIME_FILTERS[0]);
+      setCurrentPage(1);
+    },
+    [setCurrentPage],
+  );
+
+  const handlePaginationChange = useCallback(
+    ({ page, pageSize }: { page: number; pageSize: number }) => {
+      setCurrentPage(page);
+      setPageSize(pageSize);
+    },
+    [setCurrentPage, setPageSize],
+  );
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setWaitTimeRefreshTick((previousTick) => previousTick + 1);
+    }, WAIT_TIME_REFRESH_INTERVAL_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
   const renderEmptyState = () => (
     <div className={styles.tileContainer}>
       <Tile className={styles.tile}>
@@ -235,6 +383,7 @@ const ReceptionHome: React.FC = () => {
     return (
       <main className={styles.page}>
         <PatientQueueHeader title={t('reception', 'Reception')} />
+
         <div className={styles.tableShell}>
           <DataTableSkeleton role="progressbar" />
         </div>
@@ -246,17 +395,22 @@ const ReceptionHome: React.FC = () => {
     <main className={styles.page}>
       <PatientQueueHeader title={t('reception', 'Reception')} />
 
-      <section className={styles.cardContainer} aria-label={t('receptionMetrics', 'Reception metrics')}>
+      <section className={styles.summarySection} aria-label={t('receptionMetrics', 'Reception metrics')}>
         <SummaryTile values={summaryValues} headerLabel={t('checkedInPatients', 'Checked in patients')} />
-
-        <SummaryTile values={stats} headerLabel={t('currentlyServing', 'No. of Currently being Served')} />
+        <SummaryTile values={stats} headerLabel={t('currentlyServing', 'Currently being served')} />
       </section>
 
       <section className={styles.container} aria-label={t('receptionQueue', 'Reception queue')}>
         <div className={styles.headerContainer}>
-          <QueueLauncher />
+          <div className={styles.headerTitleGroup}>
+            <h4 className={styles.sectionTitle}>{t('receptionActions', 'Reception actions')}</h4>
+            <p className={styles.sectionSubtitle}>
+              {t('receptionActionsHelper', 'Check in patients or move them into the service queue.')}
+            </p>
+          </div>
 
           <div className={styles.headerButtons}>
+            <QueueLauncher />
             <CheckInLauncher />
           </div>
         </div>
@@ -273,6 +427,42 @@ const ReceptionHome: React.FC = () => {
           </div>
 
           <div className={styles.tableActions}>
+            <Dropdown
+              id="reception-status-filter"
+              className={styles.filter}
+              items={statusFilterOptions}
+              itemToString={(item) => item?.text ?? ''}
+              label={t('status', 'Status')}
+              selectedItem={selectedStatus ?? statusFilterOptions[0]}
+              size="sm"
+              titleText=""
+              onChange={handleStatusFilterChange}
+            />
+
+            <Dropdown
+              id="reception-location-filter"
+              className={styles.filter}
+              items={locationFilterOptions}
+              itemToString={(item) => item?.text ?? ''}
+              label={t('location', 'Location')}
+              selectedItem={selectedLocation ?? locationFilterOptions[0]}
+              size="sm"
+              titleText=""
+              onChange={handleLocationFilterChange}
+            />
+
+            <Dropdown
+              id="reception-wait-time-filter"
+              className={styles.filter}
+              items={WAIT_TIME_FILTERS}
+              itemToString={(item) => item?.text ?? ''}
+              label={t('waitTime', 'Wait time')}
+              selectedItem={selectedWaitTime}
+              size="sm"
+              titleText=""
+              onChange={handleWaitTimeFilterChange}
+            />
+
             <TableToolbarSearch
               expanded
               className={styles.search}
@@ -320,10 +510,7 @@ const ReceptionHome: React.FC = () => {
           pageSize={currentPageSize}
           pageSizes={pageSizes}
           totalItems={totalCount ?? 0}
-          onChange={({ page, pageSize }) => {
-            setCurrentPage(page);
-            setPageSize(pageSize);
-          }}
+          onChange={handlePaginationChange}
         />
       </section>
     </main>

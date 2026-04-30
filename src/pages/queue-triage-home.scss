@@ -3,9 +3,9 @@
 @use '@openmrs/esm-styleguide/src/vars' as *;
 
 .page {
-    background-color: $ui-background;
-    min-height: 100%;
     width: 100%;
+    min-height: 100%;
+    background-color: $ui-background;
     display: flex;
     flex-direction: column;
 }
@@ -28,12 +28,12 @@
 }
 
 .tab {
-    width: 9.375rem;
+    min-width: 9.375rem;
 }
 
 .tabPanel {
-    padding: 0;
     width: 100%;
+    padding: 0;
 }
 
 .noAccessTile {
@@ -47,12 +47,14 @@
 
 .noAccessTitle {
     @include type.type-style('heading-compact-02');
+
     color: $text-02;
     margin: 0 0 spacing.$spacing-03;
 }
 
 .noAccessMessage {
     @include type.type-style('body-compact-01');
+
     color: $text-02;
     margin: 0;
 }

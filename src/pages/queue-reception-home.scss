@@ -2,30 +2,40 @@
 @use '@carbon/styles/scss/type';
 @use '@openmrs/esm-styleguide/src/vars' as *;
 
+/* Page layout */
+
 .page {
-    background-color: $ui-background;
+    width: 100%;
     min-height: 100%;
+    background-color: $ui-background;
     display: flex;
     flex-direction: column;
 }
 
-.cardContainer {
-    background-color: $ui-02;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+.container {
+    width: 100%;
+    background-color: $ui-background;
+}
+
+/* Summary cards */
+
+.summarySection {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
     gap: spacing.$spacing-03;
     padding: 0 spacing.$spacing-05 spacing.$spacing-07 spacing.$spacing-03;
     margin-top: -(spacing.$spacing-03);
-    /* Fixes extra space at top */
+    background-color: $ui-02;
+    box-sizing: border-box;
 }
 
-.cardContainer>* {
+.summarySection>* {
     min-width: 0;
+    flex: 1 1 calc(50% - #{spacing.$spacing-03});
 }
 
-.container {
-    background-color: $ui-background;
-}
+/* Reception actions */
 
 .headerContainer {
     display: flex;
@@ -36,11 +46,39 @@
     background-color: $ui-background;
 }
 
+.headerTitleGroup {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.sectionTitle {
+    @include type.type-style('heading-compact-02');
+
+    color: $ui-05;
+    margin: 0;
+}
+
+.sectionSubtitle {
+    @include type.type-style('body-compact-01');
+
+    color: $text-02;
+    margin: spacing.$spacing-01 0 0;
+}
+
 .headerButtons {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: spacing.$spacing-03;
+    flex-shrink: 0;
 }
+
+.headerButtons :global(.cds--btn) {
+    min-width: 10rem;
+}
+
+/* Loading */
 
 .tableShell {
     margin: spacing.$spacing-05;
@@ -48,26 +86,30 @@
     background-color: $ui-01;
 }
 
+/* Table controls */
+
 .tableControls {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: spacing.$spacing-05;
     margin: 0 spacing.$spacing-05;
     padding: spacing.$spacing-04 spacing.$spacing-05;
     border: 1px solid $ui-03;
-    background-color: $ui-01;
     border-bottom: 0;
+    background-color: $ui-01;
 }
 
 .tableTitleGroup {
     display: flex;
     flex-direction: column;
     min-width: 0;
+    padding-top: spacing.$spacing-02;
 }
 
 .tableTitle {
     @include type.type-style('heading-compact-02');
+
     color: $ui-05;
     margin: 0;
     white-space: nowrap;
@@ -75,6 +117,7 @@
 
 .tableSubtitle {
     @include type.type-style('body-compact-01');
+
     color: $text-02;
     margin: spacing.$spacing-01 0 0;
 }
@@ -83,8 +126,18 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: spacing.$spacing-05;
+    gap: spacing.$spacing-03;
     min-width: 0;
+    flex-wrap: wrap;
+}
+
+.filter {
+    min-width: 12rem;
+    max-width: 14rem;
+}
+
+.filter :global(.cds--list-box__field) {
+    background-color: $ui-02;
 }
 
 .search {
@@ -96,10 +149,12 @@
     }
 }
 
+/* Table */
+
 .tableContainer {
-    border: 1px solid $ui-03;
     margin: 0 spacing.$spacing-05;
     padding: 0;
+    border: 1px solid $ui-03;
     background-color: $ui-01;
     box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
 
@@ -109,12 +164,14 @@
 
     th {
         @include type.type-style('label-01');
+
         color: $text-02;
         background-color: $ui-02;
     }
 
     td {
         @include type.type-style('body-compact-01');
+
         vertical-align: middle;
     }
 
@@ -140,8 +197,8 @@
 }
 
 .patientName {
-    font-weight: 600;
     color: $ui-05;
+    font-weight: 600;
 }
 
 .statusContainer {
@@ -160,16 +217,18 @@
     gap: spacing.$spacing-02;
 }
 
+/* Empty state */
+
 .tileContainer {
-    background-color: $ui-01;
-    border-top: 1px solid $ui-03;
     padding: spacing.$spacing-11 0;
+    border-top: 1px solid $ui-03;
+    background-color: $ui-01;
 }
 
 .tile {
-    margin: auto;
     width: fit-content;
     max-width: 24rem;
+    margin: auto;
     border: 1px solid $ui-03;
     background-color: $ui-02;
 }
@@ -183,28 +242,42 @@
 
 .content {
     @include type.type-style('heading-compact-02');
+
     color: $ui-05;
     margin-bottom: spacing.$spacing-03;
 }
 
 .helper {
     @include type.type-style('body-compact-01');
+
     color: $text-02;
     margin: 0;
 }
 
+/* Pagination */
+
 .paginationOverride {
+    margin: 0 spacing.$spacing-05 spacing.$spacing-05;
     border: 1px solid $ui-03;
     border-top: 0;
-    margin: 0 spacing.$spacing-05 spacing.$spacing-05;
     background-color: $ui-01;
 }
 
 /* Tablet */
+
 :global(.omrs-breakpoint-lt-desktop) {
-    .cardContainer {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    .summarySection {
         padding-right: spacing.$spacing-03;
+    }
+
+    .headerContainer {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .headerButtons {
+        justify-content: flex-start;
+        width: 100%;
     }
 
     .tableControls {
@@ -219,16 +292,31 @@
 }
 
 /* Mobile */
+
 @media (max-width: 672px) {
-    .cardContainer {
-        grid-template-columns: 1fr;
+    .summarySection {
         padding: spacing.$spacing-03;
         margin-top: 0;
     }
 
+    .summarySection>* {
+        flex-basis: 100%;
+    }
+
     .headerContainer {
-        align-items: flex-start;
+        align-items: stretch;
         flex-direction: column;
+    }
+
+    .headerButtons {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .headerButtons :global(.cds--btn) {
+        width: 100%;
+        max-width: none;
     }
 
     .tableControls {
@@ -237,19 +325,20 @@
     }
 
     .tableActions {
-        align-items: flex-start;
+        align-items: stretch;
         flex-direction: column;
         gap: spacing.$spacing-03;
     }
 
-    .tableContainer {
-        margin: 0 spacing.$spacing-03;
-    }
-
+    .filter,
     .search {
+        width: 100%;
         max-width: 100%;
         min-width: 0;
-        width: 100%;
+    }
+
+    .tableContainer {
+        margin: 0 spacing.$spacing-03;
     }
 
     .paginationOverride {
