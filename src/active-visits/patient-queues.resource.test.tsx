@@ -33,6 +33,7 @@ describe('usePatientQueuePages', () => {
     expect(mockedUseSWR).toHaveBeenLastCalledWith(
       expect.stringContaining('startIndex=10'),
       expect.any(Function),
+      expect.any(Object),
     );
   });
 
@@ -48,6 +49,7 @@ describe('usePatientQueuePages', () => {
     expect(mockedUseSWR).toHaveBeenLastCalledWith(
       expect.stringContaining('q=Jane%20Doe'),
       expect.any(Function),
+      expect.any(Object),
     );
     jest.useRealTimers();
   });

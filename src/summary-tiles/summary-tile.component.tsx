@@ -3,7 +3,7 @@ import { Tile, Layer } from '@carbon/react';
 import styles from './summary-tile.scss';
 
 interface Status {
-  status: any;
+  status: React.ReactNode;
   value: number;
   color: string;
 }

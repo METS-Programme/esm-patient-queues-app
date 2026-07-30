@@ -12,6 +12,7 @@ import { type ResourceFilterCriteria, ResourceRepresentation, toQueryParams } fr
 import { type PageableResult } from '../utils/pageable-result';
 import { useEffect, useMemo, useState } from 'react';
 import last from 'lodash-es/last';
+import { type QueueLocation } from '../types/location';
 export const patientQueueStartVisitFormWorkspace = 'patient-queues-start-visit-form-workspace';
 
 export interface PatientQueueFilter extends ResourceFilterCriteria {
@@ -49,70 +50,10 @@ export interface NewCheckInPayload {
   }>;
 }
 
-export interface LocationResponse {
-  uuid: string;
-  display: string;
-  name: string;
-  description: any;
-  address1: any;
-  address2: any;
-  cityVillage: any;
-  stateProvince: any;
-  country: any;
-  postalCode: any;
-  latitude: any;
-  longitude: any;
-  countyDistrict: any;
-  address3: any;
-  address4: any;
-  address5: any;
-  address6: any;
-  tags: Tag[];
-  parentLocation: ParentLocation;
-  childLocations: ChildLocation[];
-  retired: boolean;
-  attributes: any[];
-  address7: any;
-  address8: any;
-  address9: any;
-  address10: any;
-  address11: any;
-  address12: any;
-  address13: any;
-  address14: any;
-  address15: any;
-  links: Link[];
-  resourceVersion: string;
-}
-
-export interface Tag {
-  uuid: string;
-  display: string;
-  links: Link[];
-}
-
-export interface Link {
-  rel: string;
-  uri: string;
-  resourceAlias: string;
-}
-
-export interface ParentLocation {
-  uuid: string;
-  display: string;
-  links: Link[];
-}
-
-export interface ChildLocation {
-  uuid: string;
-  display: string;
-  links: Link[];
-}
-
 // get parentlocation
 export function useParentLocation(currentQueueLocationUuid?: string) {
   const apiUrl = currentQueueLocationUuid ? `${restBaseUrl}/location/${currentQueueLocationUuid}` : null;
-  const { data, error, isLoading, isValidating, mutate } = useSWR<{ data: LocationResponse }, Error>(
+  const { data, error, isLoading, isValidating, mutate } = useSWR<{ data: QueueLocation }, Error>(
     apiUrl,
     openmrsFetch,
   );
@@ -128,7 +69,7 @@ export function useParentLocation(currentQueueLocationUuid?: string) {
 
 export function useChildLocations(parentUuid?: string) {
   const apiUrl = parentUuid ? `${restBaseUrl}/location/${parentUuid}` : null;
-  const { data, error, isLoading, isValidating, mutate } = useSWR<{ data: LocationResponse }, Error>(
+  const { data, error, isLoading, isValidating, mutate } = useSWR<{ data: QueueLocation }, Error>(
     apiUrl,
     openmrsFetch,
   );
@@ -151,15 +92,18 @@ export function useProviders(selectedNextQueueLocation: string) {
   >(apiUrl, openmrsFetch);
 
   // Filter providers based on the selected location
-  const providers =
-    data?.data?.results?.filter((provider) =>
-      provider.attributes.some(
-        (attr) =>
-          attr.attributeType.display === 'Default Location' &&
-          typeof attr.value === 'object' &&
-          attr.value.uuid === selectedNextQueueLocation,
-      ),
-    ) || [];
+  const providers = useMemo(
+    () =>
+      data?.data?.results?.filter((provider) =>
+        provider.attributes.some(
+          (attr) =>
+            attr.attributeType.display === 'Default Location' &&
+            typeof attr.value === 'object' &&
+            attr.value.uuid === selectedNextQueueLocation,
+        ),
+      ) ?? [],
+    [data?.data?.results, selectedNextQueueLocation],
+  );
 
   return {
     providers,
@@ -231,18 +175,27 @@ export async function checkCurrentVisit(patientUuid) {
 }
 
 export function usePatientQueues(filter: PatientQueueFilter) {
-  const apiUrl = `${restBaseUrl}/patientqueue${toQueryParams(filter)}&onlyInQueueRooms=true&totalCount=true&v=full`;
-  const { data, error, isLoading } = useSWR<
+  const apiUrl = `${restBaseUrl}/patientqueue${toQueryParams({
+    ...filter,
+    v: filter.v ?? ResourceRepresentation.Full,
+    totalCount: true,
+  })}&onlyInQueueRooms=true`;
+  const { data, error, isLoading, mutate } = useSWR<
     {
       data: PageableResult<PatientQueue>;
     },
     Error
-  >(apiUrl, openmrsFetch);
+  >(apiUrl, openmrsFetch, {
+    dedupingInterval: 5_000,
+    errorRetryCount: 3,
+    keepPreviousData: true,
+  });
 
   return {
     items: data?.data || <PageableResult<PatientQueue>>{},
     isLoading,
     error,
+    mutate,
   };
 }
 
@@ -265,7 +218,6 @@ export function usePatientQueuePages(
   currentLocation: string,
   currentStatus: string,
   isToggled?: boolean,
-  isClinical?: boolean,
 ) {
   const pageSizes = [10, 20, 30, 40, 50];
   const [currentPage, setCurrentPage] = useState(1);
@@ -296,11 +248,11 @@ export function usePatientQueuePages(
     [currentPage, currentPageSize, currentLocation, currentStatus, debouncedSearchString, isToggled],
   );
 
-  const { items, isLoading, error } = usePatientQueues(patientQueueFilter);
+  const { items, isLoading, error, mutate } = usePatientQueues(patientQueueFilter);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [currentLocation, currentStatus, isToggled, isClinical]);
+  }, [currentLocation, currentStatus, isToggled]);
 
   return {
     items: items.results ?? [],
@@ -315,6 +267,7 @@ export function usePatientQueuePages(
     pageSizes,
     isLoading,
     error,
+    mutate,
     setSearchString,
   };
 }

@@ -200,6 +200,8 @@
   "enterFullScreen": "Enter full screen",
   "exitFullScreen": "Exit full screen",
   "queueBoardLoadError": "Unable to load the queue board",
+  "queueLoadError": "Unable to load the patient queue",
+  "queueRoomTabs": "{{room}} queue tabs",
   "retry": "Retry",
   "serving": "Serving",
   "waiting": "Waiting"

@@ -7,7 +7,9 @@ export function usePatientQueuesByParentLocation(status: string) {
   const session = useSession();
   const locationUuid = session?.sessionLocation?.uuid;
 
-  const locationApiUrl = locationUuid ? `${restBaseUrl}/location/${locationUuid}?v=full` : null;
+  const locationApiUrl = locationUuid
+    ? `${restBaseUrl}/location/${locationUuid}?v=custom:(uuid,parentLocation:(uuid))`
+    : null;
   const {
     data: queueRoomsData,
     error: queueRoomError,

@@ -7,6 +7,7 @@ import styles from './queue-reception-home.scss';
 import { useSession } from '@openmrs/esm-framework';
 
 import {
+  ActionableNotification,
   DataTable,
   DataTableSkeleton,
   Pagination,
@@ -71,6 +72,8 @@ const ReceptionHome: React.FC = () => {
     currentPage,
     setCurrentPage,
     setSearchString,
+    error,
+    mutate,
   } = usePatientQueuePages('', '');
 
   const handleSearchInputChange = (event) => {
@@ -149,6 +152,18 @@ const ReceptionHome: React.FC = () => {
 
   if (isLoading) {
     return <DataTableSkeleton role="progressbar" />;
+  }
+
+  if (error) {
+    return (
+      <ActionableNotification
+        kind="error"
+        title={t('queueLoadError', 'Unable to load the patient queue')}
+        subtitle={t('checkConnectionAndRetry', 'Check the connection and try again.')}
+        actionButtonLabel={t('retry', 'Retry')}
+        onActionButtonClick={() => void mutate()}
+      />
+    );
   }
 
   return (

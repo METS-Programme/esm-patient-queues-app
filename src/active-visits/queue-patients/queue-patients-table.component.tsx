@@ -1,6 +1,7 @@
 import React, { type AnchorHTMLAttributes, useMemo, useState } from 'react';
 
 import {
+  ActionableNotification,
   DataTable,
   DataTableSkeleton,
   Pagination,
@@ -46,6 +47,7 @@ import { useMinuteTick } from '../../hooks/use-minute-tick';
 
 interface ActiveVisitsTableProps {
   status: string;
+  roomType: 'triage' | 'clinical';
 }
 
 export interface PatientQueueInfoProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
@@ -53,12 +55,13 @@ export interface PatientQueueInfoProps extends AnchorHTMLAttributes<HTMLAnchorEl
   patientName: string;
 }
 
-const ActiveTriageVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status }) => {
+const PatientQueueTable: React.FC<ActiveVisitsTableProps> = ({ status, roomType }) => {
   const { t } = useTranslation();
   const session = useSession();
   const layout = useLayoutType();
 
-  const { triageRoomTag } = useConfig<PatientQueueConfig>();
+  const { triageRoomTag, clinicalRoomTag } = useConfig<PatientQueueConfig>();
+  const roomTag = roomType === 'triage' ? triageRoomTag : clinicalRoomTag;
   const minuteTick = useMinuteTick();
 
   const [isToggled, setIsToggled] = useState(false);
@@ -88,7 +91,9 @@ const ActiveTriageVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status }) =
     currentPage,
     setCurrentPage,
     setSearchString,
-  } = usePatientQueuePages(activeLocationUuid, status, isToggled, false);
+    error,
+    mutate,
+  } = usePatientQueuePages(activeLocationUuid, status, isToggled);
   const { items: pickedQueueEntries } = usePatientQueues({
     room: session?.sessionLocation?.uuid,
     status: QueueStatus.Picked,
@@ -157,16 +162,16 @@ const ActiveTriageVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status }) =
     }
 
     // Correct filtering for queueRoom tags
-    entries = entries.filter((entry) => entry?.queueRoom?.tags?.some((item) => item.uuid === triageRoomTag));
+    entries = entries.filter((entry) => entry?.queueRoom?.tags?.some((item) => item.uuid === roomTag));
 
     entries.sort((a, b) => {
-      if (a.status === 'PICKED' && b.status !== 'PICKED') return -1;
-      if (a.status !== 'PICKED' && b.status === 'PICKED') return 1;
+      if (a.status === 'PICKED' && b.status !== 'PICKED') return roomType === 'triage' ? -1 : 1;
+      if (a.status !== 'PICKED' && b.status === 'PICKED') return roomType === 'triage' ? 1 : -1;
       return new Date(a.dateCreated).getTime() - new Date(b.dateCreated).getTime();
     });
 
     return entries;
-  }, [items, status, triageRoomTag]);
+  }, [items, status, roomTag, roomType]);
 
   const tableRows = useMemo(() => {
     return filteredPatientQueueEntries.map((patientqueue, index) => ({
@@ -251,6 +256,18 @@ const ActiveTriageVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status }) =
 
   if (isLoading) {
     return <DataTableSkeleton role="progressbar" />;
+  }
+
+  if (error) {
+    return (
+      <ActionableNotification
+        kind="error"
+        title={t('queueLoadError', 'Unable to load the patient queue')}
+        subtitle={t('checkConnectionAndRetry', 'Check the connection and try again.')}
+        actionButtonLabel={t('retry', 'Retry')}
+        onActionButtonClick={() => void mutate()}
+      />
+    );
   }
 
   return (
@@ -345,4 +362,4 @@ const ActiveTriageVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status }) =
     </div>
   );
 };
-export default ActiveTriageVisitsTable;
+export default PatientQueueTable;

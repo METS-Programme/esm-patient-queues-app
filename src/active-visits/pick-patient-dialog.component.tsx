@@ -82,13 +82,13 @@ const PickQueuePatientDialog: React.FC<PickQueuePatientDialogProps> = ({ queueEn
         closeModal();
         handleMutate(`${restBaseUrl}/patientqueue`);
         setIsSubmitting(false);
-      } catch (error: any) {
+      } catch (error: unknown) {
         setIsSubmitting(false);
         showNotification({
           title: t('queueEntryUpdateFailed', 'Error updating queue entry status'),
           kind: 'error',
           critical: true,
-          description: error?.message,
+          description: error instanceof Error ? error.message : t('unexpectedError', 'An unexpected error occurred'),
           millis: 3000,
         });
         handleMutate(`${restBaseUrl}/patientqueue`);

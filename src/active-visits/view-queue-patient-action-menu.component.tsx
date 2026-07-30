@@ -14,7 +14,7 @@ const ViewQueuePatientActionMenu: React.FC<NameLinkProps> = ({ from, to }) => {
   const { t } = useTranslation();
 
   const handleNameClick = useCallback(
-    (event: any) => {
+    (event: React.MouseEvent<HTMLButtonElement>) => {
       event.preventDefault();
       localStorage.setItem('fromPage', from);
       navigate({ to });
