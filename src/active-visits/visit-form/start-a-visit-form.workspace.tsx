@@ -110,11 +110,6 @@ const StartVisitForm: React.FC<
     name: 'locationTo',
   });
 
-  const selectedProvider = useWatch({
-    control,
-    name: 'provider',
-  });
-
   const {
     providers = [],
     error: errorLoadingProviders,
@@ -148,29 +143,6 @@ const StartVisitForm: React.FC<
       shouldDirty: false,
     });
   }, [queueRoomLocations, selectedNextQueueLocation, setValue]);
-
-  useEffect(() => {
-    if (!selectedNextQueueLocation) {
-      setValue('provider', '', {
-        shouldValidate: true,
-        shouldDirty: false,
-      });
-      return;
-    }
-
-    const providerStillExists = providers.some((provider) => provider.uuid === selectedProvider);
-
-    if (selectedProvider && providerStillExists) {
-      return;
-    }
-
-    const defaultProvider = providers?.[0]?.uuid ?? '';
-
-    setValue('provider', defaultProvider, {
-      shouldValidate: true,
-      shouldDirty: false,
-    });
-  }, [providers, selectedNextQueueLocation, selectedProvider, setValue]);
 
   const onSubmit = useCallback(
     async (formValues: CreateQueueEntryFormData) => {
@@ -215,7 +187,7 @@ const StartVisitForm: React.FC<
 
         const request: NewCheckInPayload = {
           patient: patientUuid,
-          provider: formValues.provider,
+          provider: formValues.provider || null,
           currentLocation: sessionLocationUuid,
           locationTo: formValues.locationTo,
           patientStatus: QueueStatus.Pending,
@@ -275,16 +247,9 @@ const StartVisitForm: React.FC<
   );
 
   const hasQueueRooms = queueRoomLocations.length > 0;
-  const hasProviders = providers.length > 0;
 
   const disableSubmit =
-    isSubmitting ||
-    !isValid ||
-    !sessionLocationUuid ||
-    !hasQueueRooms ||
-    !hasProviders ||
-    Boolean(errorLoadingQueueRooms) ||
-    Boolean(errorLoadingProviders);
+    isSubmitting || !isValid || !sessionLocationUuid || !hasQueueRooms || Boolean(errorLoadingQueueRooms);
 
   return (
     <form className={styles.container} onSubmit={handleSubmit(onSubmit)}>
@@ -419,7 +384,7 @@ const StartVisitForm: React.FC<
         </section>
 
         <section className={styles.section}>
-          <h4 className={styles.sectionTitle}>{t('selectAProvider', 'Select a provider')}</h4>
+          <h4 className={styles.sectionTitle}>{t('selectAProviderOptional', 'Select a provider (optional)')}</h4>
 
           <ResponsiveWrapper isTablet={isTablet}>
             <Controller
@@ -435,7 +400,7 @@ const StartVisitForm: React.FC<
                   value={field.value ?? ''}
                   onChange={(event) => field.onChange(event.target.value)}
                 >
-                  <SelectItem text={t('selectProvider', 'Choose a provider')} value="" />
+                  <SelectItem text={t('unassigned', 'Unassigned')} value="" />
 
                   {providers.map((provider) => (
                     <SelectItem key={provider.uuid} text={provider.display} value={provider.uuid} />

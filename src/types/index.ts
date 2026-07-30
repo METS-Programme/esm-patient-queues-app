@@ -350,7 +350,7 @@ export interface Links {
 
 export interface NewQueuePayload {
   patient: string;
-  provider: string;
+  provider: string | null;
   locationFrom: string;
   locationTo: string;
   status: string;
@@ -362,7 +362,7 @@ export interface NewQueuePayload {
 
 export interface NewCheckInPayload {
   patient: string;
-  provider: string;
+  provider: string | null;
   currentLocation: string;
   locationTo: string;
   patientStatus: string;

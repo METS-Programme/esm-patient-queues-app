@@ -351,7 +351,7 @@ const MoveToNextServicePointForm: React.FC<
 
           const request: NewQueuePayload = {
             patient: patientUuid ?? '',
-            provider: formValues.provider ?? '',
+            provider: formValues.provider || null,
             locationFrom: sessionLocationUuid,
             locationTo: formValues.locationTo,
             status: QueueStatus.Pending,
@@ -550,7 +550,7 @@ const MoveToNextServicePointForm: React.FC<
             </section>
 
             <section className={styles.section}>
-              <h4 className={styles.sectionTitle}>{t('selectAProvider', 'Select a provider')}</h4>
+              <h4 className={styles.sectionTitle}>{t('selectAProviderOptional', 'Select a provider (optional)')}</h4>
 
               <ResponsiveWrapper isTablet={isTablet}>
                 <Controller
@@ -566,7 +566,7 @@ const MoveToNextServicePointForm: React.FC<
                       value={field.value ?? ''}
                       onChange={(event) => field.onChange(event.target.value)}
                     >
-                      <SelectItem text={t('selectProvider', 'Choose a provider')} value="" />
+                      <SelectItem text={t('unassigned', 'Unassigned')} value="" />
 
                       {providers.map((provider) => (
                         <SelectItem key={provider.uuid} text={provider.display} value={provider.uuid} />
