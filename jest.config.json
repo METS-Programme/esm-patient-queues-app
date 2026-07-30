@@ -1,0 +1,40 @@
+{
+  "clearMocks": true,
+  "collectCoverageFrom": [
+    "src/**/*.{ts,tsx}",
+    "!src/**/*.d.ts",
+    "!src/index.ts"
+  ],
+  "moduleNameMapper": {
+    "\\.(css|scss)$": "identity-obj-proxy",
+    "^@openmrs/esm-framework$": "<rootDir>/src/__mocks__/openmrs-esm-framework.ts"
+  },
+  "setupFilesAfterEnv": [
+    "<rootDir>/src/setup-tests.ts"
+  ],
+  "testEnvironment": "jsdom",
+  "transform": {
+    "^.+\\.(t|j)sx?$": [
+      "@swc/jest",
+      {
+        "jsc": {
+          "parser": {
+            "syntax": "typescript",
+            "tsx": true
+          },
+          "transform": {
+            "react": {
+              "runtime": "automatic"
+            }
+          }
+        },
+        "module": {
+          "type": "commonjs"
+        }
+      }
+    ]
+  },
+  "transformIgnorePatterns": [
+    "node_modules/(?!(@openmrs|lodash-es)/)"
+  ]
+}

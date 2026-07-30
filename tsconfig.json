@@ -5,6 +5,12 @@
     "allowSyntheticDefaultImports": true,
     "jsx": "react",
     "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@openmrs/esm-framework": [
+        "node_modules/@openmrs/esm-framework/dist/internal.d.ts"
+      ]
+    },
     "moduleResolution": "node",
     "lib": [
       "dom",

@@ -160,7 +160,7 @@ const EndVisitConfirmation: React.FC<EndVisitConfirmationProps> = ({ closeModal,
   return (
     <Form>
       {isFetchingProvider && <InlineLoading status="active" description="Is Fetching" />}
-      <ModalHeader closeModal={close} className={styles.modalHeader}>
+      <ModalHeader closeModal={closeModal} className={styles.modalHeader}>
         {t('endVisit', 'End Visit')}?
       </ModalHeader>
       <ModalBody>

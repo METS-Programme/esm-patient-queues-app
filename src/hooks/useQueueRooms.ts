@@ -128,8 +128,8 @@ export interface Links {
   resourcealias: string;
 }
 
-export function useQueueRoomLocations(currentQueueLocation: string) {
-  const apiUrl = `${restBaseUrl}/location/${currentQueueLocation}?v=full`;
+export function useQueueRoomLocations(currentQueueLocation?: string) {
+  const apiUrl = currentQueueLocation ? `${restBaseUrl}/location/${currentQueueLocation}?v=full` : null;
   const { data, error, isLoading, mutate } = useSWR<{ data: QueueRoomsResponse }>(apiUrl, openmrsFetch);
 
   const queueRoomLocations = useMemo(

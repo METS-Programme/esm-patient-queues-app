@@ -15,7 +15,8 @@
     "debug": "npm run serve",
     "build": "webpack --mode production",
     "analyze": "webpack --mode=production --env.analyze=true",
-    "lint": "eslint src --ext tsx,ts --fix --max-warnings=0",
+    "lint": "eslint src --ext tsx,ts --max-warnings=0",
+    "lint:fix": "eslint src --ext tsx,ts --fix",
     "verify": "turbo run lint && turbo run typescript",
     "prettier": "prettier --config prettier.config.js --write \"src/**/*.{ts,tsx,css,scss}\"",
     "test": "cross-env TZ=UTC jest --config jest.config.json --verbose false --passWithNoTests",
@@ -115,7 +116,9 @@
     "systemjs-webpack-interop": "^2.3.7",
     "turbo": "^2.5.2",
     "typescript": "^5.0.2",
-    "webpack-bundle-analyzer": "^4.4.0"
+    "webpack": "5.105.3",
+    "webpack-bundle-analyzer": "^4.4.0",
+    "webpack-cli": "^6.0.1"
   },
   "packageManager": "yarn@4.9.2"
 }

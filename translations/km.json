@@ -195,5 +195,12 @@
   "waitTime": "ពេលវេលារង់ចាំ (នាទី)",
   "weight": "ទម្ងន់",
   "years": "ឆ្នាំ",
-  "youngest": "អាយុក្មេងជាងគេដំបូង"
+  "youngest": "អាយុក្មេងជាងគេដំបូង",
+  "checkConnectionAndRetry": "Check the connection and try again.",
+  "enterFullScreen": "Enter full screen",
+  "exitFullScreen": "Exit full screen",
+  "queueBoardLoadError": "Unable to load the queue board",
+  "retry": "Retry",
+  "serving": "Serving",
+  "waiting": "Waiting"
 }

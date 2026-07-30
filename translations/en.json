@@ -261,5 +261,12 @@
     "waitTime": "Wait time (mins)",
     "weight": "Weight",
     "years": "Years",
-    "youngest": "Youngest first"
+    "youngest": "Youngest first",
+    "checkConnectionAndRetry": "Check the connection and try again.",
+    "enterFullScreen": "Enter full screen",
+    "exitFullScreen": "Exit full screen",
+    "queueBoardLoadError": "Unable to load the queue board",
+    "retry": "Retry",
+    "serving": "Serving",
+    "waiting": "Waiting"
 }

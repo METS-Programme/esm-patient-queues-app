@@ -13,7 +13,6 @@ import {
   ButtonSet,
 } from '@carbon/react';
 import {
-  type DefaultWorkspaceProps,
   navigate,
   restBaseUrl,
   showNotification,
@@ -32,18 +31,15 @@ import {
   addQueueEntry,
   getCareProvider,
   getCurrentPatientQueueByPatientUuid,
-  getPatientQueueUuid,
   updateQueueEntry,
   useProviders,
 } from './patient-queues.resource';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { type CreateQueueEntryFormData, createQueueEntrySchema } from './patient-queue-validation-schema.resource';
-import { getSelectedPatientQueueUuid } from '../helpers/helpers';
-import { type PatientQueue } from '../types/patient-queues';
-
 type MoveToNextServicePointFormProps = {
   patientUuid: string;
+  queueUuid: string;
 };
 
 const MoveToNextServicePointForm: React.FC<
@@ -53,15 +49,12 @@ const MoveToNextServicePointForm: React.FC<
       startVisitWorkspaceName: string;
     }
   >
-> = ({ closeWorkspace, workspaceProps: { patientUuid } }) => {
+> = ({ closeWorkspace, workspaceProps: { patientUuid, queueUuid } }) => {
   // Hooks
   const { t } = useTranslation();
   const isTablet = useLayoutType() === 'tablet';
   const sessionUser = useSession();
-  const patientQueueUuid = getSelectedPatientQueueUuid().getState();
-
   // States
-  const [queueEntry, setQueueEntry] = useState<PatientQueue>();
   const [contentSwitcherIndex, setContentSwitcherIndex] = useState(1);
   const [statusSwitcherIndex, setStatusSwitcherIndex] = useState(1);
   const [status, setStatus] = useState('');
@@ -112,48 +105,15 @@ const MoveToNextServicePointForm: React.FC<
       .finally(() => setIsLoading(false));
   }, [sessionUser?.user?.uuid]);
 
-  // Fetch queue entry
-  const fetchQueueEntry = useCallback(async () => {
-    try {
-      const response = await getPatientQueueUuid(patientQueueUuid.patientQueueUuid);
-
-      if (response?.status === 200 && response?.data) {
-        setQueueEntry(response.data);
-      } else {
-        showNotification({
-          title: 'Queue entry not found',
-          kind: 'warning',
-          description: 'The server did not return a valid queue entry.',
-          critical: true,
-          millis: 3000,
-        });
-      }
-    } catch (error) {
-      const errorMessages = extractErrorMessagesFromResponse(error);
-      showNotification({
-        title: "Couldn't get queue entry",
-        kind: 'error',
-        critical: true,
-        description: errorMessages.join(', '),
-        millis: 3000,
-      });
-    }
-  }, [patientQueueUuid]);
-
   // Effects
   useEffect(() => {
     fetchProvider();
   }, [fetchProvider]);
 
-  useEffect(() => {
-    if (patientQueueUuid) {
-      fetchQueueEntry();
-    }
-  }, [patientQueueUuid, fetchQueueEntry]);
-
   const {
     handleSubmit,
     control,
+    setValue,
     formState: { errors },
   } = useForm<CreateQueueEntryFormData>({
     mode: 'all',
@@ -172,6 +132,22 @@ const MoveToNextServicePointForm: React.FC<
     setStatus(statusLabels[statusSwitcherIndex].status);
   }, [statusSwitcherIndex, statusLabels]);
 
+  useEffect(() => {
+    if (!selectedNextQueueLocation && queueRoomLocations.length > 0) {
+      const locationUuid = queueRoomLocations[0].uuid;
+      setSelectedNextQueueLocation(locationUuid);
+      setValue('locationTo', locationUuid, { shouldValidate: true });
+    }
+  }, [queueRoomLocations, selectedNextQueueLocation, setValue]);
+
+  useEffect(() => {
+    const defaultProvider = providers[0]?.uuid ?? sessionUser?.currentProvider?.uuid;
+    if (!selectedProvider && defaultProvider) {
+      setSelectedProvider(defaultProvider);
+      setValue('provider', defaultProvider, { shouldValidate: true });
+    }
+  }, [providers, selectedProvider, sessionUser?.currentProvider?.uuid, setValue]);
+
   const handleSave = useCallback(async () => {
     try {
       setIsSubmitting(true);
@@ -182,11 +158,11 @@ const MoveToNextServicePointForm: React.FC<
       );
 
       const queues = patientQueueEntryResponse.data?.results[0]?.patientQueues;
-      const queueEntry = queues?.filter((item) => item?.patient?.uuid === patientUuid);
+      const queueEntry = queues?.find((item) => item?.uuid === queueUuid || item?.patient?.uuid === patientUuid);
 
       if (status === QueueStatus.Pending) {
-        if (queueEntry.length > 0) {
-          await updateQueueEntry(status, provider, queueEntry[0]?.uuid, 0, priorityComment, comment).then(() => {
+        if (queueEntry) {
+          await updateQueueEntry(status, provider, queueEntry.uuid, 0, priorityComment, comment).then(() => {
             showSnackbar({
               title: t('moveToNextServicePoint', 'Move back your service point'),
               kind: 'success',
@@ -217,11 +193,11 @@ const MoveToNextServicePointForm: React.FC<
       }
 
       if (status === QueueStatus.Completed) {
-        if (queueEntry.length > 0) {
+        if (queueEntry) {
           await updateQueueEntry(
             QueueStatus.Completed,
             provider,
-            queueEntry[0]?.uuid,
+            queueEntry.uuid,
             contentSwitcherIndex,
             priorityComment,
             comment,
@@ -291,12 +267,12 @@ const MoveToNextServicePointForm: React.FC<
         millis: 3000,
       });
       handleMutate(`${restBaseUrl}/patientqueue`);
-      closeWorkspace();
     }
   }, [
     closeWorkspace,
     contentSwitcherIndex,
     patientUuid,
+    queueUuid,
     priorityComment,
     provider,
     selectedNextQueueLocation,

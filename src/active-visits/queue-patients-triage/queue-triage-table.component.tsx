@@ -1,4 +1,4 @@
-import React, { type AnchorHTMLAttributes, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { type AnchorHTMLAttributes, useMemo, useState } from 'react';
 
 import {
   DataTable,
@@ -21,7 +21,12 @@ import {
 
 import { useTranslation } from 'react-i18next';
 import { useSession, useLayoutType, isDesktop, useConfig } from '@openmrs/esm-framework';
-import { getOriginFromPathName, useParentLocation, usePatientQueuePages } from '../patient-queues.resource';
+import {
+  getOriginFromPathName,
+  useParentLocation,
+  usePatientQueuePages,
+  usePatientQueues,
+} from '../patient-queues.resource';
 import {
   buildStatusString,
   formatWaitTime,
@@ -33,11 +38,11 @@ import {
 import PickQueuePatientActionMenu from '../pick-queue-patient-action-action.component';
 import NotesActionsMenu from '../notes/notes-action-menu.components';
 import styles from '../active-visits-table.scss';
-import dayjs from 'dayjs';
-import StatusIcon, { QueueStatus } from '../../utils/utils';
+import StatusIcon, { QueueEnumStatus, QueueStatus } from '../../utils/utils';
 import { type PatientQueueConfig } from '../../config-schema';
 import MovetoNextServicePointReassignAction from '../move-to-next-service-point-re-assign-action.component';
 import ViewQueuePatientActionMenu from '../view-queue-patient-action-menu.component';
+import { useMinuteTick } from '../../hooks/use-minute-tick';
 
 interface ActiveVisitsTableProps {
   status: string;
@@ -54,10 +59,9 @@ const ActiveTriageVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status }) =
   const layout = useLayoutType();
 
   const { triageRoomTag } = useConfig<PatientQueueConfig>();
-  const [tick, setTick] = useState(0);
+  const minuteTick = useMinuteTick();
 
   const [isToggled, setIsToggled] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
   const handleToggleChange = () => {
     setIsToggled(!isToggled);
   };
@@ -69,13 +73,35 @@ const ActiveTriageVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status }) =
 
   const fromPage: string = getOriginFromPathName(currentPathName);
 
-  const handleSearchInputChange = useCallback((event) => {
+  const handleSearchInputChange = (event) => {
     const searchText = event?.target?.value?.trim().toLowerCase();
-    setSearchTerm(searchText);
-  }, []);
+    setSearchString(searchText || null);
+  };
 
-  const { isLoading, items, totalCount, currentPageSize, setPageSize, pageSizes, currentPage, setCurrentPage } =
-    usePatientQueuePages(activeLocationUuid, status, isToggled, false);
+  const {
+    isLoading,
+    items,
+    totalCount,
+    currentPageSize,
+    setPageSize,
+    pageSizes,
+    currentPage,
+    setCurrentPage,
+    setSearchString,
+  } = usePatientQueuePages(activeLocationUuid, status, isToggled, false);
+  const { items: pickedQueueEntries } = usePatientQueues({
+    room: session?.sessionLocation?.uuid,
+    status: QueueStatus.Picked,
+    limit: 100,
+  });
+  const hasPickedPatient = useMemo(
+    () =>
+      pickedQueueEntries.results?.some(
+        (item) =>
+          item?.provider?.identifier === session?.user?.systemId && item?.status === QueueEnumStatus.PICKED,
+      ) ?? false,
+    [pickedQueueEntries.results, session?.user?.systemId],
+  );
 
   const tableHeaders = useMemo(
     () => [
@@ -116,7 +142,7 @@ const ActiveTriageVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status }) =
   );
 
   const filteredPatientQueueEntries = useMemo(() => {
-    let entries = items;
+    let entries = [...items];
 
     switch (status) {
       case QueueStatus.Completed:
@@ -130,11 +156,6 @@ const ActiveTriageVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status }) =
         break;
     }
 
-    if (searchTerm) {
-      const lowercasedTerm = searchTerm.toLowerCase();
-      entries = entries.filter((entry) => entry.patient?.person?.display?.toLowerCase().includes(lowercasedTerm));
-    }
-
     // Correct filtering for queueRoom tags
     entries = entries.filter((entry) => entry?.queueRoom?.tags?.some((item) => item.uuid === triageRoomTag));
 
@@ -145,15 +166,7 @@ const ActiveTriageVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status }) =
     });
 
     return entries;
-  }, [items, status, searchTerm, triageRoomTag]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTick((prev) => prev + 1);
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, []);
+  }, [items, status, triageRoomTag]);
 
   const tableRows = useMemo(() => {
     return filteredPatientQueueEntries.map((patientqueue, index) => ({
@@ -188,7 +201,7 @@ const ActiveTriageVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status }) =
       },
       waitTime: {
         content: (() => {
-          const minutes = getWaitTimeInMinutes(patientqueue);
+          const minutes = getWaitTimeInMinutes(patientqueue, minuteTick);
 
           return (
             <Tag>
@@ -208,27 +221,33 @@ const ActiveTriageVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status }) =
         content: (
           <div style={{ display: 'flex' }}>
             {patientqueue?.status === 'PENDING' && (
-              <PickQueuePatientActionMenu queueEntry={patientqueue} closeModal={() => true} />
+              <PickQueuePatientActionMenu
+                queueEntry={patientqueue}
+                closeModal={() => true}
+                hasPickedPatient={hasPickedPatient}
+              />
             )}
 
             {(patientqueue?.status === 'COMPLETED' || patientqueue?.status === 'PICKED') && (
               <ViewQueuePatientActionMenu
                 to={`\${openmrsSpaBase}/patient/${patientqueue?.patient?.uuid}/chart`}
                 from={fromPage}
-                queueUuid={filteredPatientQueueEntries[index].uuid}
               />
             )}
 
             <NotesActionsMenu note={patientqueue} />
 
             {patientqueue?.status === 'PENDING' && isToggled && (
-              <MovetoNextServicePointReassignAction patientUuid={filteredPatientQueueEntries[index].patient.uuid} />
+              <MovetoNextServicePointReassignAction
+                patientUuid={filteredPatientQueueEntries[index].patient.uuid}
+                queueUuid={filteredPatientQueueEntries[index].uuid}
+              />
             )}
           </div>
         ),
       },
     }));
-  }, [filteredPatientQueueEntries, session.user, t, fromPage, isToggled]);
+  }, [filteredPatientQueueEntries, session.user, t, fromPage, isToggled, minuteTick, hasPickedPatient]);
 
   if (isLoading) {
     return <DataTableSkeleton role="progressbar" />;
@@ -243,7 +262,7 @@ const ActiveTriageVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status }) =
         rows={tableRows}
         useZebraStyles
       >
-        {({ rows, headers, getHeaderProps, getTableProps, getRowProps }) => (
+        {({ rows, headers, getHeaderProps, getTableProps }) => (
           <TableContainer className={styles.tableContainer}>
             <TableToolbar
               style={{

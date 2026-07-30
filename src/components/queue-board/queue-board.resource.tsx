@@ -29,12 +29,17 @@ export function usePatientQueuesByParentLocation(status: string) {
     mutate,
   } = useSWR<{
     data: { results: Array<PatientQueue> };
-  }>(queueApiUrl, openmrsFetch);
+  }>(queueApiUrl, openmrsFetch, {
+    refreshInterval: 15_000,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
+    keepPreviousData: true,
+  });
 
   return {
     isLoading: patientQueueLoading || queueRoomLoading,
     isError: patientQueueErrors || queueRoomError,
-    patientQueues: data?.data?.results,
+    patientQueues: data?.data?.results ?? [],
     mutate,
   };
 }
@@ -44,12 +49,14 @@ export function usePatientQueueBoard() {
     patientQueues: pending,
     isLoading: loadingPending,
     isError: errorPending,
+    mutate: mutatePending,
   } = usePatientQueuesByParentLocation('pending');
 
   const {
     patientQueues: picked,
     isLoading: loadingPicked,
     isError: errorPicked,
+    mutate: mutatePicked,
   } = usePatientQueuesByParentLocation('picked');
 
   return {
@@ -57,5 +64,6 @@ export function usePatientQueueBoard() {
     isError: errorPending || errorPicked,
     pending,
     picked,
+    refresh: () => Promise.all([mutatePending(), mutatePicked()]),
   };
 }

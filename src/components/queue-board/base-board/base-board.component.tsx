@@ -22,10 +22,10 @@ const BaseBoardComponent: React.FC<BaseBoardProps> = ({ title, data, hasBorder, 
     >
       <h1 className={styles.heading}>{title}</h1>
       <div className={styles.gridFlow}>
-        {data
-          .sort((a, b) => (a.dateCreated < b.dateCreated ? 0 : 1))
+        {[...data]
+          .sort((a, b) => new Date(a.dateCreated).getTime() - new Date(b.dateCreated).getTime())
           .map((queueEntry) => {
-            return <TicketCard queue={queueEntry} />;
+            return <TicketCard key={queueEntry.uuid} queue={queueEntry} />;
           })}
       </div>
     </div>

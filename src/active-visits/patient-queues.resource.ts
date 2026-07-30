@@ -5,13 +5,12 @@ import {
   launchWorkspace2,
   openmrsFetch,
   restBaseUrl,
-  usePagination,
 } from '@openmrs/esm-framework';
 import { type PatientQueue } from '../types/patient-queues';
 import { type NewVisitPayload, type ProviderResponse } from '../types';
 import { type ResourceFilterCriteria, ResourceRepresentation, toQueryParams } from '../utils/resource-filter-criteria';
 import { type PageableResult } from '../utils/pageable-result';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import last from 'lodash-es/last';
 export const patientQueueStartVisitFormWorkspace = 'patient-queues-start-visit-form-workspace';
 
@@ -111,8 +110,8 @@ export interface ChildLocation {
 }
 
 // get parentlocation
-export function useParentLocation(currentQueueLocationUuid: string) {
-  const apiUrl = `${restBaseUrl}/location/${currentQueueLocationUuid}`;
+export function useParentLocation(currentQueueLocationUuid?: string) {
+  const apiUrl = currentQueueLocationUuid ? `${restBaseUrl}/location/${currentQueueLocationUuid}` : null;
   const { data, error, isLoading, isValidating, mutate } = useSWR<{ data: LocationResponse }, Error>(
     apiUrl,
     openmrsFetch,
@@ -127,8 +126,8 @@ export function useParentLocation(currentQueueLocationUuid: string) {
   };
 }
 
-export function useChildLocations(parentUuid: string) {
-  const apiUrl = `${restBaseUrl}/location/${parentUuid}`;
+export function useChildLocations(parentUuid?: string) {
+  const apiUrl = parentUuid ? `${restBaseUrl}/location/${parentUuid}` : null;
   const { data, error, isLoading, isValidating, mutate } = useSWR<{ data: LocationResponse }, Error>(
     apiUrl,
     openmrsFetch,
@@ -247,6 +246,21 @@ export function usePatientQueues(filter: PatientQueueFilter) {
   };
 }
 
+export function usePatientQueueCount(filter: PatientQueueFilter) {
+  const { items, isLoading, error } = usePatientQueues({
+    ...filter,
+    startIndex: 0,
+    limit: 1,
+    totalCount: true,
+  });
+
+  return {
+    count: items.totalCount ?? 0,
+    isLoading,
+    error,
+  };
+}
+
 export function usePatientQueuePages(
   currentLocation: string,
   currentStatus: string,
@@ -257,42 +271,47 @@ export function usePatientQueuePages(
   const [currentPage, setCurrentPage] = useState(1);
   const [currentPageSize, setPageSize] = useState(10);
   const [searchString, setSearchString] = useState<string | null>(null);
-
-  const [patientQueueFilter, setPatientQueueFilter] = useState<PatientQueueFilter>({
-    startIndex: currentPage - 1,
-    v: ResourceRepresentation.Full,
-    limit: currentPageSize,
-    q: null,
-    totalCount: true,
-    parentLocation: isToggled && !isClinical ? currentLocation : '',
-    status: isToggled ? currentStatus : '',
-    room: !isToggled ? currentLocation : '',
-  });
-
-  const { items, isLoading, error } = usePatientQueues(patientQueueFilter);
-  const pagination = usePagination(items.results, currentPageSize);
+  const [debouncedSearchString, setDebouncedSearchString] = useState<string | null>(null);
 
   useEffect(() => {
-    setPatientQueueFilter({
+    const timeout = window.setTimeout(() => {
+      setDebouncedSearchString(searchString);
+      setCurrentPage(1);
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [searchString]);
+
+  const patientQueueFilter = useMemo<PatientQueueFilter>(
+    () => ({
       startIndex: (currentPage - 1) * currentPageSize,
       v: ResourceRepresentation.Full,
       limit: currentPageSize,
-      q: searchString,
+      q: debouncedSearchString,
       totalCount: true,
-      parentLocation: isToggled && !isClinical ? currentLocation : '',
-      status: isToggled ? currentStatus : '',
+      parentLocation: isToggled ? currentLocation : '',
+      status: currentStatus,
       room: !isToggled ? currentLocation : '',
-    });
-  }, [searchString, currentPage, currentPageSize, currentLocation, currentStatus, isToggled, isClinical]);
+    }),
+    [currentPage, currentPageSize, currentLocation, currentStatus, debouncedSearchString, isToggled],
+  );
+
+  const { items, isLoading, error } = usePatientQueues(patientQueueFilter);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [currentLocation, currentStatus, isToggled, isClinical]);
 
   return {
-    items: pagination.results,
-    pagination,
-    totalCount: items.totalCount,
+    items: items.results ?? [],
+    totalCount: items.totalCount ?? 0,
     currentPageSize,
     currentPage,
     setCurrentPage,
-    setPageSize,
+    setPageSize: (pageSize: number) => {
+      setPageSize(pageSize);
+      setCurrentPage(1);
+    },
     pageSizes,
     isLoading,
     error,
@@ -416,7 +435,6 @@ export const launchStartVisitForm = () => {
         patientUuid: string,
         patient: fhir.Patient,
         launchChildWorkspace: Workspace2DefinitionProps['launchChildWorkspace'],
-        closeWorkspace: Workspace2DefinitionProps['closeWorkspace'],
       ) {
         launchChildWorkspace(patientQueueStartVisitFormWorkspace, {
           patientUuid: patient.id,

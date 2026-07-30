@@ -68,7 +68,7 @@ export const convertTime12to24 = (time12h, timeFormat: amPm) => {
   return [hours];
 };
 
-export const getWaitTimeInMinutes = (queue) => {
+export const getWaitTimeInMinutes = (queue, now: number | Date = Date.now()) => {
   if (!queue) return null;
 
   if (queue.status === 'COMPLETED') {
@@ -76,7 +76,7 @@ export const getWaitTimeInMinutes = (queue) => {
       return dayjs(queue.dateChanged).diff(dayjs(queue.dateCreated), 'minutes');
     }
   } else if (queue.dateCreated) {
-    return dayjs().diff(dayjs(queue.dateCreated), 'minutes');
+    return dayjs(now).diff(dayjs(queue.dateCreated), 'minutes');
   }
 
   return null;

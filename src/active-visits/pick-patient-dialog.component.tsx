@@ -30,7 +30,7 @@ const PickQueuePatientDialog: React.FC<PickQueuePatientDialogProps> = ({ queueEn
 
   const [provider, setProvider] = useState('');
 
-  const [priorityComment, setPriorityComment] = useState('');
+  const priorityComment = '';
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 

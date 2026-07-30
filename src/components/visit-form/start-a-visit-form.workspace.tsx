@@ -79,6 +79,7 @@ const StartVisitForm: React.FC<
   const {
     handleSubmit,
     control,
+    setValue,
     formState: { errors },
   } = useForm<CreateQueueEntryFormData>({
     mode: 'all',
@@ -94,10 +95,26 @@ const StartVisitForm: React.FC<
   }, [contentSwitcherIndex, priorityLabels]);
 
   useEffect(() => {
-    if (queueRoomLocations?.length && sessionUser) {
-      setVisitType(allVisitTypes?.length > 0 ? allVisitTypes[0].uuid : null);
+    if (!selectedNextQueueLocation && queueRoomLocations.length > 0) {
+      const locationUuid = queueRoomLocations[0].uuid;
+      setSelectedNextQueueLocation(locationUuid);
+      setValue('locationTo', locationUuid, { shouldValidate: true });
     }
-  }, [sessionUser, queueRoomLocations?.length, queueRoomLocations, allVisitTypes]);
+  }, [queueRoomLocations, selectedNextQueueLocation, setValue]);
+
+  useEffect(() => {
+    if (!selectedProvider && providers.length > 0) {
+      const providerUuid = providers[0].uuid;
+      setSelectedProvider(providerUuid);
+      setValue('provider', providerUuid, { shouldValidate: true });
+    }
+  }, [providers, selectedProvider, setValue]);
+
+  useEffect(() => {
+    if (!visitType && allVisitTypes?.length > 0) {
+      setVisitType(allVisitTypes[0].uuid);
+    }
+  }, [allVisitTypes, visitType]);
 
   const onSubmit = useCallback(async () => {
     setIsSubmitting(true);
@@ -151,7 +168,6 @@ const StartVisitForm: React.FC<
         closeWorkspace();
       }
     } catch (error) {
-      closeWorkspace();
       showNotification({
         title: t('startVisitError', 'Error starting visit'),
         kind: 'error',
