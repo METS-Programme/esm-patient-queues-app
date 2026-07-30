@@ -63,7 +63,7 @@ const PickQueuePatientDialog: React.FC<PickQueuePatientDialogProps> = ({ queueEn
   useEffect(() => fetchProvider(), [fetchProvider]);
 
   const pickPatientQueueStatus = useCallback(
-    async (event) => {
+    async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       setIsSubmitting(true);
 

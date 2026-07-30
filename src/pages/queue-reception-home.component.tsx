@@ -76,7 +76,7 @@ const ReceptionHome: React.FC = () => {
     mutate,
   } = usePatientQueuePages('', '');
 
-  const handleSearchInputChange = (event) => {
+  const handleSearchInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const searchText = event?.target?.value?.trim().toLowerCase();
     setSearchString(searchText || null);
   };
@@ -226,7 +226,7 @@ const ReceptionHome: React.FC = () => {
                   <TableHead>
                     <TableRow>
                       {headers.map((header) => (
-                        <TableHeader key={header.key} {...getHeaderProps({ header })}>
+                        <TableHeader {...getHeaderProps({ header })}>
                           {header.header}
                         </TableHeader>
                       ))}

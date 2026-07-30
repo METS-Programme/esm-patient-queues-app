@@ -14,9 +14,9 @@ const PrintActionsMenu: React.FC<PrintActionsMenuProps> = ({ patient }) => {
   const { t } = useTranslation();
   const [isPrinting, setIsPrinting] = useState(false);
 
-  const contentToPrintRef = useRef(null);
+  const contentToPrintRef = useRef<HTMLDivElement | null>(null);
 
-  const onBeforeGetContentResolve = useRef(null);
+  const onBeforeGetContentResolve = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (onBeforeGetContentResolve.current) {
@@ -28,7 +28,7 @@ const PrintActionsMenu: React.FC<PrintActionsMenuProps> = ({ patient }) => {
     content: () => contentToPrintRef.current,
     onBeforeGetContent: () =>
       new Promise((resolve) => {
-        onBeforeGetContentResolve.current = resolve;
+        onBeforeGetContentResolve.current = () => resolve(undefined);
         setIsPrinting(true);
       }),
     onAfterPrint: () => {

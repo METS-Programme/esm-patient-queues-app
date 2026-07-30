@@ -71,19 +71,24 @@ const EndVisitConfirmation: React.FC<EndVisitConfirmationProps> = ({ closeModal,
   const handleEndVisit = async () => {
     setIsEndingVisit(true);
 
-    const endVisitPayload = {
-      location: activeVisit?.location?.uuid,
-      startDatetime: parseDate(activeVisit?.startDatetime),
-      visitType: activeVisit?.visitType?.uuid,
-      stopDatetime: new Date(),
-    };
-
     try {
       let hasEndedVisit = false;
       let hasEndedQueue = false;
 
       // 1. Attempt to end the visit if it exists
       if (activeVisit?.uuid) {
+        const locationUuid = activeVisit.location?.uuid;
+        const startDatetime = activeVisit.startDatetime;
+        const visitTypeUuid = activeVisit.visitType?.uuid;
+        if (!locationUuid || !startDatetime || !visitTypeUuid) {
+          throw new Error('The active visit is missing its location, start time, or visit type');
+        }
+        const endVisitPayload = {
+          location: locationUuid,
+          startDatetime: parseDate(startDatetime),
+          visitType: visitTypeUuid,
+          stopDatetime: new Date(),
+        };
         const visitResponse = await updateVisit(activeVisit.uuid, endVisitPayload);
         if (visitResponse.status === 200) {
           hasEndedVisit = true;
@@ -91,7 +96,11 @@ const EndVisitConfirmation: React.FC<EndVisitConfirmationProps> = ({ closeModal,
       }
 
       // 2. Get queue entry and end it if found
-      const queueResponse = await getCurrentPatientQueueByPatientUuid(patientUuid, sessionUser?.sessionLocation?.uuid);
+      const sessionLocationUuid = sessionUser?.sessionLocation?.uuid;
+      if (!sessionLocationUuid) {
+        throw new Error('A session location is required');
+      }
+      const queueResponse = await getCurrentPatientQueueByPatientUuid(patientUuid, sessionLocationUuid);
 
       const queues = queueResponse?.data?.results?.[0]?.patientQueues || [];
       const queueEntry = queues.find((item) => item?.patient?.uuid === patientUuid);

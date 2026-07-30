@@ -37,6 +37,7 @@ import {
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { type CreateQueueEntryFormData, createQueueEntrySchema } from './patient-queue-validation-schema.resource';
+import { requireWorkspaceProps } from '../utils/workspace';
 type MoveToNextServicePointFormProps = {
   patientUuid: string;
   queueUuid: string;
@@ -49,7 +50,8 @@ const MoveToNextServicePointForm: React.FC<
       startVisitWorkspaceName: string;
     }
   >
-> = ({ closeWorkspace, workspaceProps: { patientUuid, queueUuid } }) => {
+> = ({ closeWorkspace, workspaceProps }) => {
+  const { patientUuid, queueUuid } = requireWorkspaceProps(workspaceProps, 'Move to next service point');
   // Hooks
   const { t } = useTranslation();
   const isTablet = useLayoutType() === 'tablet';
@@ -151,10 +153,14 @@ const MoveToNextServicePointForm: React.FC<
   const handleSave = useCallback(async () => {
     try {
       setIsSubmitting(true);
+      const sessionLocationUuid = sessionUser?.sessionLocation?.uuid;
+      if (!sessionLocationUuid) {
+        throw new Error('A session location is required');
+      }
       // get queue entry by patient id
       const patientQueueEntryResponse = await getCurrentPatientQueueByPatientUuid(
         patientUuid,
-        sessionUser?.sessionLocation?.uuid,
+        sessionLocationUuid,
       );
 
       const queues = patientQueueEntryResponse.data?.results[0]?.patientQueues;
@@ -173,7 +179,7 @@ const MoveToNextServicePointForm: React.FC<
             handleMutate(`${restBaseUrl}/patientqueue`);
             setIsSubmitting(false);
 
-            const roles = getSessionStore().getState().session?.user?.roles;
+            const roles = getSessionStore().getState().session?.user?.roles ?? [];
             const roleName = roles[0]?.display;
             if (roles && roles?.length > 0) {
               if (roles?.filter((item) => item?.display === 'Organizational: Clinician').length > 0) {
@@ -206,7 +212,7 @@ const MoveToNextServicePointForm: React.FC<
           const request: NewQueuePayload = {
             patient: patientUuid,
             provider: selectedProvider ?? '',
-            locationFrom: sessionUser?.sessionLocation?.uuid,
+            locationFrom: sessionLocationUuid,
             locationTo: selectedNextQueueLocation,
             status: QueueStatus.Pending,
             priority: contentSwitcherIndex,
@@ -238,7 +244,7 @@ const MoveToNextServicePointForm: React.FC<
             setIsSubmitting(false);
             // view patient summary
             // navigate({ to: `\${openmrsSpaBase}/home` });
-            const roles = getSessionStore().getState().session?.user?.roles;
+            const roles = getSessionStore().getState().session?.user?.roles ?? [];
             const roleName = roles[0]?.display;
             if (roles && roles?.length > 0) {
               if (roles?.filter((item) => item?.display === 'Organizational: Clinician').length > 0) {
@@ -312,6 +318,7 @@ const MoveToNextServicePointForm: React.FC<
                   selectedIndex={contentSwitcherIndex}
                   className={styles.contentSwitcher}
                   onChange={({ index }) => {
+                    if (index === undefined) return;
                     field.onChange(priorityLabels[index]);
                     setContentSwitcherIndex(index);
                   }}
@@ -343,6 +350,7 @@ const MoveToNextServicePointForm: React.FC<
                   selectedIndex={statusSwitcherIndex}
                   className={styles.contentSwitcher}
                   onChange={({ index }) => {
+                    if (index === undefined) return;
                     field.onChange(statusLabels[index].status);
                     setStatusSwitcherIndex(index);
                   }}
@@ -503,7 +511,12 @@ const MoveToNextServicePointForm: React.FC<
   );
 };
 
-function ResponsiveWrapper({ children, isTablet }) {
+interface ResponsiveWrapperProps {
+  children: React.ReactNode;
+  isTablet: boolean;
+}
+
+function ResponsiveWrapper({ children, isTablet }: ResponsiveWrapperProps) {
   return isTablet ? <Layer>{children}</Layer> : <div>{children}</div>;
 }
 

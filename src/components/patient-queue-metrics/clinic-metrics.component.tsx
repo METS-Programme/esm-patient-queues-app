@@ -3,7 +3,7 @@ import { UserHasAccess, useSession } from '@openmrs/esm-framework';
 import { useTranslation } from 'react-i18next';
 import { PRIVILEGE_RECEPTION_METRIC, PRIVILIGE_TRIAGE_METRIC } from '../../constants';
 
-import { useServicePointCount } from './clinic-metrics.resource';
+import { type PatientStats, useServicePointCount } from './clinic-metrics.resource';
 import styles from './clinic-metrics.scss';
 import { useParentLocation } from '../../active-visits/patient-queues.resource';
 import { CheckmarkOutline, Pending, ProgressBarRound } from '@carbon/react/icons';
@@ -51,7 +51,7 @@ const ClinicMetrics: React.FC = () => {
   );
 };
 
-export const getMetrics = (locationTag, patientStats) => {
+export const getMetrics = (locationTag: string, patientStats?: PatientStats[]) => {
   const stats = patientStats?.find((item) => item.locationTag?.display === locationTag) || {
     pending: 0,
     serving: 0,

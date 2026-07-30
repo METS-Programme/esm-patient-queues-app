@@ -76,7 +76,7 @@ const PatientQueueTable: React.FC<ActiveVisitsTableProps> = ({ status, roomType 
 
   const fromPage: string = getOriginFromPathName(currentPathName);
 
-  const handleSearchInputChange = (event) => {
+  const handleSearchInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const searchText = event?.target?.value?.trim().toLowerCase();
     setSearchString(searchText || null);
   };
@@ -317,7 +317,7 @@ const PatientQueueTable: React.FC<ActiveVisitsTableProps> = ({ status, roomType 
                   {headers
                     .filter((header) => isToggled || header.key !== 'provider')
                     .map((header) => (
-                      <TableHeader key={header.key} {...getHeaderProps({ header })}>
+                      <TableHeader {...getHeaderProps({ header })}>
                         {header.header}
                       </TableHeader>
                     ))}

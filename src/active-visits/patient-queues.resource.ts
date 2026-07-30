@@ -115,12 +115,18 @@ export function useProviders(selectedNextQueueLocation: string) {
   };
 }
 
+interface IncompleteQueueResponse {
+  results: Array<{
+    patientQueues: PatientQueue[];
+  }>;
+}
+
 export async function getCurrentPatientQueueByPatientUuid(patientUuid: string, currentLocation: string) {
   const apiUrl = `${restBaseUrl}/incompletequeue?queueRoom=${currentLocation}&patient=${patientUuid}&v=full`;
 
   const abortController = new AbortController();
 
-  return await openmrsFetch(apiUrl, {
+  return await openmrsFetch<IncompleteQueueResponse>(apiUrl, {
     signal: abortController.signal,
     headers: {
       'Content-Type': 'application/json',
@@ -168,7 +174,7 @@ export async function getCurrentVisit(patient: string, date: string) {
   });
 }
 
-export async function checkCurrentVisit(patientUuid) {
+export async function checkCurrentVisit(patientUuid: string) {
   const date = dayjs().format('YYYY-MM-DD');
   const resp = await getCurrentVisit(patientUuid, date);
   return resp.data?.results !== null && resp.data?.results.length > 0;
@@ -215,7 +221,7 @@ export function usePatientQueueCount(filter: PatientQueueFilter) {
 }
 
 export function usePatientQueuePages(
-  currentLocation: string,
+  currentLocation: string | undefined,
   currentStatus: string,
   isToggled?: boolean,
 ) {
@@ -241,9 +247,9 @@ export function usePatientQueuePages(
       limit: currentPageSize,
       q: debouncedSearchString,
       totalCount: true,
-      parentLocation: isToggled ? currentLocation : '',
+      parentLocation: isToggled ? (currentLocation ?? '') : '',
       status: currentStatus,
-      room: !isToggled ? currentLocation : '',
+      room: !isToggled ? (currentLocation ?? '') : '',
     }),
     [currentPage, currentPageSize, currentLocation, currentStatus, debouncedSearchString, isToggled],
   );
@@ -274,7 +280,7 @@ export function usePatientQueuePages(
 
 export const getOriginFromPathName = (pathname = '') => {
   const from = pathname.split('/');
-  return last(from);
+  return last(from) ?? '';
 };
 
 export async function updateQueueEntry(

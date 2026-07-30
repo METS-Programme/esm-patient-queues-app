@@ -41,6 +41,7 @@ import {
 } from '../../active-visits/patient-queue-validation-schema.resource';
 import { QueueStatus, handleMutate } from '../../utils/utils';
 import { type PatientQueueConfig } from '../../config-schema';
+import { requireWorkspaceProps } from '../../utils/workspace';
 
 type VisitFormProps = {
   patientUuid: string;
@@ -53,7 +54,8 @@ const StartVisitForm: React.FC<
       startVisitWorkspaceName: string;
     }
   >
-> = ({ closeWorkspace, workspaceProps: { patientUuid } }) => {
+> = ({ closeWorkspace, workspaceProps }) => {
+  const { patientUuid } = requireWorkspaceProps(workspaceProps, 'Start visit');
   const { t } = useTranslation();
   const isTablet = useLayoutType() === 'tablet';
   const sessionUser = useSession();
@@ -75,7 +77,10 @@ const StartVisitForm: React.FC<
   const priorityLabels = useMemo(() => ['Not Urgent', 'Urgent', 'Emergency'], []);
 
   const { providers, error: errorLoadingProviders, isLoading } = useProviders(selectedNextQueueLocation);
-  const [extraVisitInfo, setExtraVisitInfo] = useState(null);
+  const [extraVisitInfo, setExtraVisitInfo] = useState<{
+    handleCreateExtraVisitInfo?: () => void;
+    attributes?: NewCheckInPayload['attributes'];
+  } | null>(null);
   const {
     handleSubmit,
     control,
@@ -133,12 +138,16 @@ const StartVisitForm: React.FC<
       }
 
       const { handleCreateExtraVisitInfo, attributes: extraAttributes } = extraVisitInfo ?? {};
+      const sessionLocationUuid = sessionUser?.sessionLocation?.uuid;
+      if (!sessionLocationUuid) {
+        throw new Error('A session location is required');
+      }
 
       // Add new queue entry
       const request: NewCheckInPayload = {
         patient: patientUuid,
         provider: selectedProvider,
-        currentLocation: sessionUser?.sessionLocation?.uuid,
+        currentLocation: sessionLocationUuid,
         locationTo: selectedNextQueueLocation,
         patientStatus: QueueStatus.Pending,
         priority: contentSwitcherIndex,
@@ -231,6 +240,7 @@ const StartVisitForm: React.FC<
                   selectedIndex={contentSwitcherIndex}
                   className={styles.contentSwitcher}
                   onChange={({ index }) => {
+                    if (index === undefined) return;
                     field.onChange(priorityLabels[index]);
                     setContentSwitcherIndex(index);
                   }}
@@ -426,7 +436,12 @@ const StartVisitForm: React.FC<
   );
 };
 
-function ResponsiveWrapper({ children, isTablet }) {
+interface ResponsiveWrapperProps {
+  children: React.ReactNode;
+  isTablet: boolean;
+}
+
+function ResponsiveWrapper({ children, isTablet }: ResponsiveWrapperProps) {
   return isTablet ? <Layer>{children}</Layer> : <div>{children}</div>;
 }
 
