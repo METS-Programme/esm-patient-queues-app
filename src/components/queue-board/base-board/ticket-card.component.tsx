@@ -13,7 +13,7 @@ export const TicketCard: React.FC<TicketCardProp> = ({ queue }) => {
   return (
     <div className={styles.card}>
       <p className={styles.subHeader}>{t('ticketNumber', 'Ticket number')}</p>
-      <p className={queue.status === 'picked' ? styles.headerBlinking : styles.header}>
+      <p className={queue.status?.toLowerCase() === 'picked' ? styles.headerBlinking : styles.header}>
         {trimVisitNumber(queue.visitNumber)}
       </p>
       <p className={styles.subHeader}>

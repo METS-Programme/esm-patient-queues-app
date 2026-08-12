@@ -30,7 +30,7 @@ const PickQueuePatientDialog: React.FC<PickQueuePatientDialogProps> = ({ queueEn
 
   const [provider, setProvider] = useState('');
 
-  const [priorityComment, setPriorityComment] = useState('');
+  const priorityComment = '';
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -63,7 +63,7 @@ const PickQueuePatientDialog: React.FC<PickQueuePatientDialogProps> = ({ queueEn
   useEffect(() => fetchProvider(), [fetchProvider]);
 
   const pickPatientQueueStatus = useCallback(
-    async (event) => {
+    async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       setIsSubmitting(true);
 
@@ -82,13 +82,13 @@ const PickQueuePatientDialog: React.FC<PickQueuePatientDialogProps> = ({ queueEn
         closeModal();
         handleMutate(`${restBaseUrl}/patientqueue`);
         setIsSubmitting(false);
-      } catch (error: any) {
+      } catch (error: unknown) {
         setIsSubmitting(false);
         showNotification({
           title: t('queueEntryUpdateFailed', 'Error updating queue entry status'),
           kind: 'error',
           critical: true,
-          description: error?.message,
+          description: error instanceof Error ? error.message : t('unexpectedError', 'An unexpected error occurred'),
           millis: 3000,
         });
         handleMutate(`${restBaseUrl}/patientqueue`);

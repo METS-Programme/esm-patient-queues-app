@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 
@@ -7,6 +7,7 @@ import styles from './queue-reception-home.scss';
 import { useSession } from '@openmrs/esm-framework';
 
 import {
+  ActionableNotification,
   DataTable,
   DataTableSkeleton,
   Pagination,
@@ -43,12 +44,13 @@ import CheckInLauncher from '../components/check-in/check-in.component';
 import PatientQueueHeader from '../components/patient-queue-header/patient-queue-header.component';
 import QueueLauncher from '../components/queue-launcher/queue-launcher.component';
 import SummaryTile from '../summary-tiles/summary-tile.component';
+import { useMinuteTick } from '../hooks/use-minute-tick';
 
 const ReceptionHome: React.FC = () => {
   const { t } = useTranslation();
   const session = useSession();
   const { location } = useParentLocation(session?.sessionLocation?.uuid);
-  const [tick, setTick] = useState(0);
+  const minuteTick = useMinuteTick();
 
   const { stats } = useServicePointCount(
     location?.parentLocation?.uuid,
@@ -56,19 +58,28 @@ const ReceptionHome: React.FC = () => {
     dayjs(new Date()).format('YYYY-MM-DD'),
   );
 
-  const [searchTerm, setSearchTerm] = useState('');
-
   const currentPathName: string = window.location.pathname;
 
   const fromPage: string = getOriginFromPathName(currentPathName);
 
-  const { isLoading, items, totalCount, currentPageSize, setPageSize, pageSizes, currentPage, setCurrentPage } =
-    usePatientQueuePages('', '');
+  const {
+    isLoading,
+    items,
+    totalCount,
+    currentPageSize,
+    setPageSize,
+    pageSizes,
+    currentPage,
+    setCurrentPage,
+    setSearchString,
+    error,
+    mutate,
+  } = usePatientQueuePages('', '');
 
-  const handleSearchInputChange = useCallback((event) => {
+  const handleSearchInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const searchText = event?.target?.value?.trim().toLowerCase();
-    setSearchTerm(searchText);
-  }, []);
+    setSearchString(searchText || null);
+  };
 
   const tableHeaders = useMemo(
     () => [
@@ -83,12 +94,7 @@ const ReceptionHome: React.FC = () => {
   );
 
   const filteredPatientQueueEntries = useMemo(() => {
-    let entries = items || [];
-
-    if (searchTerm) {
-      const lowercasedTerm = searchTerm.toLowerCase();
-      entries = entries.filter((entry) => entry?.patient?.person?.display.toLowerCase().includes(lowercasedTerm));
-    }
+    const entries = [...(items || [])];
 
     entries.sort((a, b) => {
       const aCreatedTime = new Date(a.dateCreated).getTime();
@@ -97,19 +103,11 @@ const ReceptionHome: React.FC = () => {
     });
 
     return entries;
-  }, [items, searchTerm]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTick((prev) => prev + 1);
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, []);
+  }, [items]);
 
   // Prepare table rows
   const tableRows = useMemo(() => {
-    return filteredPatientQueueEntries.map((patientqueue, index) => ({
+    return filteredPatientQueueEntries.map((patientqueue) => ({
       ...patientqueue,
       id: patientqueue.uuid,
       visitNumber: { content: <span>{trimVisitNumber(patientqueue?.visitNumber)}</span> },
@@ -125,7 +123,7 @@ const ReceptionHome: React.FC = () => {
       },
       waitTime: {
         content: (() => {
-          const minutes = getWaitTimeInMinutes(patientqueue);
+          const minutes = getWaitTimeInMinutes(patientqueue, minuteTick);
 
           return (
             <Tag>
@@ -150,10 +148,22 @@ const ReceptionHome: React.FC = () => {
         ),
       },
     }));
-  }, [filteredPatientQueueEntries, fromPage, t]);
+  }, [filteredPatientQueueEntries, fromPage, t, minuteTick]);
 
   if (isLoading) {
     return <DataTableSkeleton role="progressbar" />;
+  }
+
+  if (error) {
+    return (
+      <ActionableNotification
+        kind="error"
+        title={t('queueLoadError', 'Unable to load the patient queue')}
+        subtitle={t('checkConnectionAndRetry', 'Check the connection and try again.')}
+        actionButtonLabel={t('retry', 'Retry')}
+        onActionButtonClick={() => void mutate()}
+      />
+    );
   }
 
   return (
@@ -216,7 +226,7 @@ const ReceptionHome: React.FC = () => {
                   <TableHead>
                     <TableRow>
                       {headers.map((header) => (
-                        <TableHeader key={header.key} {...getHeaderProps({ header })}>
+                        <TableHeader {...getHeaderProps({ header })}>
                           {header.header}
                         </TableHeader>
                       ))}

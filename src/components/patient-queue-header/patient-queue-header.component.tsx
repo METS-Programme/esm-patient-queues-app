@@ -13,7 +13,7 @@ const PatientQueueHeader: React.FC<{ title?: string }> = ({ title }) => {
 
   const userLocation = userSession?.sessionLocation?.display;
 
-  const { location, isLoading: loading } = useParentLocation(userSession?.sessionLocation?.uuid);
+  const { location } = useParentLocation(userSession?.sessionLocation?.uuid);
 
   return (
     <>

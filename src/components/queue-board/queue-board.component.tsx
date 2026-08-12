@@ -1,5 +1,5 @@
-import React from 'react';
-import { Button, Column, Grid } from '@carbon/react';
+import React, { useEffect, useRef } from 'react';
+import { ActionableNotification, Button, Column, Grid } from '@carbon/react';
 import { FitToScreen, ShrinkScreen } from '@carbon/react/icons';
 import styles from './queue-board.scss';
 import BaseBoardComponent from './base-board/base-board.component';
@@ -8,11 +8,30 @@ import { usePatientQueueBoard } from './queue-board.resource';
 import { BoardSkeleton } from './board-skeleton.component';
 import { getPatientQueueWaitingList, updatePatientQueueWaitingList } from '../../helpers/helpers';
 import { readTickets } from './voice.utils';
+import { useTranslation } from 'react-i18next';
 
 const QueueBoardComponent: React.FC = () => {
+  const { t } = useTranslation();
   const handle = useFullScreenHandle();
-  const { isError, isLoading, pending, picked } = usePatientQueueBoard();
-  if (isLoading || isError) {
+  const { isError, isLoading, pending, picked, refresh } = usePatientQueueBoard();
+  const announcedTicketIds = useRef(new Set<string>());
+
+  useEffect(() => {
+    const waitingListIds = new Set(getPatientQueueWaitingList().getState().queue.map((entry) => entry.uuid));
+    const newlyPicked = picked.filter(
+      (queue) => waitingListIds.has(queue.uuid) && !announcedTicketIds.current.has(queue.uuid),
+    );
+
+    newlyPicked.forEach((queue) => announcedTicketIds.current.add(queue.uuid));
+    updatePatientQueueWaitingList(pending);
+    void readTickets(newlyPicked);
+
+    return () => {
+      window.speechSynthesis?.cancel();
+    };
+  }, [pending, picked]);
+
+  if (isLoading) {
     return (
       <Grid>
         <Column sm={8} md={8} lg={8}>
@@ -25,15 +44,17 @@ const QueueBoardComponent: React.FC = () => {
     );
   }
 
-  // Notify user about being in serve list
-  const waitingList = getPatientQueueWaitingList().getState();
-
-  const waitingListIds = waitingList.queue.map((e) => e.uuid);
-  const pickedFromWaiting = picked.filter((queue) => waitingListIds.includes(queue.uuid));
-
-  readTickets(pickedFromWaiting).then(() => {
-    updatePatientQueueWaitingList(pending);
-  });
+  if (isError) {
+    return (
+      <ActionableNotification
+        kind="error"
+        title={t('queueBoardLoadError', 'Unable to load the queue board')}
+        subtitle={t('checkConnectionAndRetry', 'Check the connection and try again.')}
+        actionButtonLabel={t('retry', 'Retry')}
+        onActionButtonClick={() => void refresh()}
+      />
+    );
+  }
 
   return (
     <FullScreen handle={handle}>
@@ -45,6 +66,9 @@ const QueueBoardComponent: React.FC = () => {
           hasIconOnly
           kind={'ghost'}
           onClick={handle.active ? handle.exit : handle.enter}
+          iconDescription={
+            handle.active ? t('exitFullScreen', 'Exit full screen') : t('enterFullScreen', 'Enter full screen')
+          }
           style={{
             position: 'absolute',
             top: 0,
@@ -53,10 +77,15 @@ const QueueBoardComponent: React.FC = () => {
         />
         <Grid>
           <Column sm={8} md={8} lg={8}>
-            <BaseBoardComponent title={'Waiting'} data={pending} hasBorder={true} isFullScreen={handle.active} />
+            <BaseBoardComponent
+              title={t('waiting', 'Waiting')}
+              data={pending}
+              hasBorder={true}
+              isFullScreen={handle.active}
+            />
           </Column>
           <Column sm={8} md={8} lg={8}>
-            <BaseBoardComponent title={'Serving'} data={picked} isFullScreen={handle.active} />
+            <BaseBoardComponent title={t('serving', 'Serving')} data={picked} isFullScreen={handle.active} />
           </Column>
         </Grid>
       </div>

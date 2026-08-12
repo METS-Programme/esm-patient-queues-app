@@ -18,9 +18,8 @@ export function toQueryParams<T extends ResourceFilterCriteria>(
   skipEmptyString = true,
 ): string {
   if (!filterCriteria) return '';
-  const queryParams: string = Object.keys(filterCriteria)
-    ?.map((key) => {
-      const value = filterCriteria[key];
+  const queryParams: string = Object.entries(filterCriteria)
+    ?.map(([key, value]) => {
       return (skipEmptyString && (value === false || value === true ? true : value)) ||
         (!skipEmptyString && (value === '' || (value === false || value === true ? true : value)))
         ? `${encodeURIComponent(key)}=${encodeURIComponent(value.toString())}`

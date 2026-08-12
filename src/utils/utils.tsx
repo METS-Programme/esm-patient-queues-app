@@ -4,10 +4,21 @@ import { restBaseUrl } from '@openmrs/esm-framework';
 import debounce from 'lodash-es/debounce';
 import { mutate } from 'swr';
 
-export function extractErrorMessagesFromResponse(errorObject) {
-  const fieldErrors = errorObject?.responseBody?.error?.fieldErrors;
+interface ApiError {
+  message?: string;
+  responseBody?: {
+    error?: {
+      message?: string;
+      fieldErrors?: Record<string, Error[]>;
+    };
+  };
+}
+
+export function extractErrorMessagesFromResponse(errorObject: unknown) {
+  const typedError = errorObject as ApiError;
+  const fieldErrors = typedError?.responseBody?.error?.fieldErrors;
   if (!fieldErrors) {
-    return [errorObject?.responseBody?.error?.message ?? errorObject?.message];
+    return [typedError?.responseBody?.error?.message ?? typedError?.message ?? 'An unexpected error occurred'];
   }
   return Object.values(fieldErrors).flatMap((errors: Array<Error>) => errors.map((error) => error.message));
 }
@@ -35,7 +46,7 @@ export const handleMutate = (url: string) => {
   refreshDashboardMetrics();
 };
 
-function StatusIcon({ status }) {
+function StatusIcon({ status }: { status: string }) {
   switch (status) {
     case 'pending':
       return <InProgress size={16} />;

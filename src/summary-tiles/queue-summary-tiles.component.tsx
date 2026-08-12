@@ -1,7 +1,11 @@
 import React from 'react';
 import styles from './queue-summary-tiles.scss';
-import { type AssignedExtension, useConnectedExtensions, Extension } from '@openmrs/esm-framework';
-import { ComponentContext } from '@openmrs/esm-framework/src/internal';
+import {
+  type AssignedExtension,
+  ComponentContext,
+  Extension,
+  useConnectedExtensions,
+} from '@openmrs/esm-framework';
 
 const QueueSummaryTiles: React.FC = () => {
   const queueTileSlot = 'queue-tiles-slot';
@@ -12,7 +16,7 @@ const QueueSummaryTiles: React.FC = () => {
     <div className={styles.cardContainer}>
       {tilesExtensions
         .filter((extension) => Object.keys(extension).length > 0)
-        .map((extension, index) => {
+        .map((extension) => {
           return (
             <ComponentContext.Provider
               key={extension.id}

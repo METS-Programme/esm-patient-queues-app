@@ -1,38 +1,23 @@
 import { Button } from '@carbon/react';
 import { Notification } from '@carbon/react/icons';
-import { showModal, showSnackbar, useSession } from '@openmrs/esm-framework';
-import React, { useCallback, useEffect, useMemo } from 'react';
+import { showModal, showSnackbar } from '@openmrs/esm-framework';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type PatientQueue } from '../types/patient-queues';
-import { usePatientQueuePages } from './patient-queues.resource';
-import { QueueEnumStatus, QueueStatus } from '../utils/utils';
-import { updateSelectedPatientQueueUuid } from '../helpers/helpers';
+import { QueueEnumStatus } from '../utils/utils';
 
 interface PickPatientActionMenuProps {
   queueEntry: PatientQueue;
   closeModal: () => void;
+  hasPickedPatient: boolean;
 }
 
-const PickQueuePatientActionButton: React.FC<PickPatientActionMenuProps> = ({ queueEntry, closeModal }) => {
+const PickQueuePatientActionButton: React.FC<PickPatientActionMenuProps> = ({
+  queueEntry,
+  closeModal,
+  hasPickedPatient,
+}) => {
   const { t } = useTranslation();
-  const { sessionLocation, user } = useSession() || {};
-  const sessionLocationId = sessionLocation?.uuid;
-  const providerId = user?.systemId;
-
-  useEffect(() => {
-    if (queueEntry?.uuid) {
-      updateSelectedPatientQueueUuid(queueEntry?.uuid);
-    }
-  }, [queueEntry?.uuid]);
-
-  const { items: pickedQueueItems } = usePatientQueuePages(sessionLocationId, QueueStatus.Picked);
-
-  const hasPickedPatient = useMemo(() => {
-    if (!pickedQueueItems || !providerId) return false;
-    return pickedQueueItems.some(
-      (item) => item?.provider?.identifier === providerId && item?.status === QueueEnumStatus.PICKED,
-    );
-  }, [pickedQueueItems, providerId]);
 
   const launchPickPatientQueueModal = useCallback(() => {
     if (hasPickedPatient) {

@@ -1,25 +1,28 @@
 import React, { useCallback } from 'react';
 
-import { Button, Tooltip } from '@carbon/react';
+import { Button } from '@carbon/react';
 import { Send } from '@carbon/react/icons';
 import { useTranslation } from 'react-i18next';
 import { launchWorkspace2 } from '@openmrs/esm-framework';
 
 type MovetoNextServicePointReassignPatientActionProps = {
   patientUuid: string;
+  queueUuid: string;
 };
 
 const MovetoNextServicePointReassignAction: React.FC<MovetoNextServicePointReassignPatientActionProps> = ({
   patientUuid,
+  queueUuid,
 }) => {
   const { t } = useTranslation();
 
   const handleClick = useCallback(() => {
     launchWorkspace2('move-to-next-service-point-form-workspace', {
       workspaceTitle: t('moveToNextServicePoint', 'Move to next service point'),
-      patientUuid: patientUuid,
+      patientUuid,
+      queueUuid,
     });
-  }, [t, patientUuid]);
+  }, [t, patientUuid, queueUuid]);
 
   return (
     <Button

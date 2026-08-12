@@ -41,6 +41,7 @@ import {
 } from '../../active-visits/patient-queue-validation-schema.resource';
 import { QueueStatus, handleMutate } from '../../utils/utils';
 import { type PatientQueueConfig } from '../../config-schema';
+import { requireWorkspaceProps } from '../../utils/workspace';
 
 type VisitFormProps = {
   patientUuid: string;
@@ -53,7 +54,8 @@ const StartVisitForm: React.FC<
       startVisitWorkspaceName: string;
     }
   >
-> = ({ closeWorkspace, workspaceProps: { patientUuid } }) => {
+> = ({ closeWorkspace, workspaceProps }) => {
+  const { patientUuid } = requireWorkspaceProps(workspaceProps, 'Start visit');
   const { t } = useTranslation();
   const isTablet = useLayoutType() === 'tablet';
   const sessionUser = useSession();
@@ -75,10 +77,14 @@ const StartVisitForm: React.FC<
   const priorityLabels = useMemo(() => ['Not Urgent', 'Urgent', 'Emergency'], []);
 
   const { providers, error: errorLoadingProviders, isLoading } = useProviders(selectedNextQueueLocation);
-  const [extraVisitInfo, setExtraVisitInfo] = useState(null);
+  const [extraVisitInfo, setExtraVisitInfo] = useState<{
+    handleCreateExtraVisitInfo?: () => void;
+    attributes?: NewCheckInPayload['attributes'];
+  } | null>(null);
   const {
     handleSubmit,
     control,
+    setValue,
     formState: { errors },
   } = useForm<CreateQueueEntryFormData>({
     mode: 'all',
@@ -94,10 +100,26 @@ const StartVisitForm: React.FC<
   }, [contentSwitcherIndex, priorityLabels]);
 
   useEffect(() => {
-    if (queueRoomLocations?.length && sessionUser) {
-      setVisitType(allVisitTypes?.length > 0 ? allVisitTypes[0].uuid : null);
+    if (!selectedNextQueueLocation && queueRoomLocations.length > 0) {
+      const locationUuid = queueRoomLocations[0].uuid;
+      setSelectedNextQueueLocation(locationUuid);
+      setValue('locationTo', locationUuid, { shouldValidate: true });
     }
-  }, [sessionUser, queueRoomLocations?.length, queueRoomLocations, allVisitTypes]);
+  }, [queueRoomLocations, selectedNextQueueLocation, setValue]);
+
+  useEffect(() => {
+    if (!selectedProvider && providers.length > 0) {
+      const providerUuid = providers[0].uuid;
+      setSelectedProvider(providerUuid);
+      setValue('provider', providerUuid, { shouldValidate: true });
+    }
+  }, [providers, selectedProvider, setValue]);
+
+  useEffect(() => {
+    if (!visitType && allVisitTypes?.length > 0) {
+      setVisitType(allVisitTypes[0].uuid);
+    }
+  }, [allVisitTypes, visitType]);
 
   const onSubmit = useCallback(async () => {
     setIsSubmitting(true);
@@ -116,12 +138,16 @@ const StartVisitForm: React.FC<
       }
 
       const { handleCreateExtraVisitInfo, attributes: extraAttributes } = extraVisitInfo ?? {};
+      const sessionLocationUuid = sessionUser?.sessionLocation?.uuid;
+      if (!sessionLocationUuid) {
+        throw new Error('A session location is required');
+      }
 
       // Add new queue entry
       const request: NewCheckInPayload = {
         patient: patientUuid,
         provider: selectedProvider,
-        currentLocation: sessionUser?.sessionLocation?.uuid,
+        currentLocation: sessionLocationUuid,
         locationTo: selectedNextQueueLocation,
         patientStatus: QueueStatus.Pending,
         priority: contentSwitcherIndex,
@@ -151,7 +177,6 @@ const StartVisitForm: React.FC<
         closeWorkspace();
       }
     } catch (error) {
-      closeWorkspace();
       showNotification({
         title: t('startVisitError', 'Error starting visit'),
         kind: 'error',
@@ -215,6 +240,7 @@ const StartVisitForm: React.FC<
                   selectedIndex={contentSwitcherIndex}
                   className={styles.contentSwitcher}
                   onChange={({ index }) => {
+                    if (index === undefined) return;
                     field.onChange(priorityLabels[index]);
                     setContentSwitcherIndex(index);
                   }}
@@ -410,7 +436,12 @@ const StartVisitForm: React.FC<
   );
 };
 
-function ResponsiveWrapper({ children, isTablet }) {
+interface ResponsiveWrapperProps {
+  children: React.ReactNode;
+  isTablet: boolean;
+}
+
+function ResponsiveWrapper({ children, isTablet }: ResponsiveWrapperProps) {
   return isTablet ? <Layer>{children}</Layer> : <div>{children}</div>;
 }
 

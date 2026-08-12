@@ -27,8 +27,10 @@ export interface Link {
   resourceAlias: string;
 }
 
-export function useServicePointCount(parentLocation: string, beforeDate: string, afterDate: string) {
-  const apiUrl = `${restBaseUrl}/queuestatistics?parentLocation=${parentLocation}&toDate=${afterDate}&fromDate=${beforeDate}`;
+export function useServicePointCount(parentLocation: string | undefined, beforeDate: string, afterDate: string) {
+  const apiUrl = parentLocation
+    ? `${restBaseUrl}/queuestatistics?parentLocation=${parentLocation}&toDate=${afterDate}&fromDate=${beforeDate}`
+    : null;
   const { data, error, isLoading, isValidating, mutate } = useSWR<{ data: { results: Array<PatientStats> } }, Error>(
     apiUrl,
     openmrsFetch,

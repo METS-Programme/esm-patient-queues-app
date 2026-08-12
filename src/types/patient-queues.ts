@@ -137,17 +137,9 @@ export interface LocationFrom {
   resourceversion: string;
 }
 
-export interface ParentLocation {
-  uuid: string;
-  display: string;
-  links: Links[];
-}
+export type ParentLocation = LocationReference;
 
-export interface Tags {
-  uuid: string;
-  display: string;
-  links: Links[];
-}
+export type Tags = LocationTag;
 
 export interface Provider {
   uuid: string;
@@ -255,3 +247,4 @@ export interface Links {
   uri: string;
   resourcealias: string;
 }
+import { type LocationReference, type LocationTag } from './location';
