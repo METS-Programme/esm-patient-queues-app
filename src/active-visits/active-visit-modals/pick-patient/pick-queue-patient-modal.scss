@@ -1,0 +1,70 @@
+@use '@carbon/styles/scss/spacing';
+@use '@carbon/styles/scss/type';
+@use '@openmrs/esm-styleguide/src/vars' as *;
+
+.form {
+  width: 100%;
+}
+
+.modalBody {
+  padding-top: spacing.$spacing-05;
+}
+
+.inlineLoading {
+  margin-bottom: spacing.$spacing-05;
+}
+
+.patientSummary {
+  display: flex;
+  flex-direction: column;
+  gap: spacing.$spacing-05;
+}
+
+.patientName {
+  @include type.type-style('heading-compact-02');
+
+  color: $text-02;
+  margin: 0;
+}
+
+.detailsList {
+  display: flex;
+  flex-direction: column;
+  gap: spacing.$spacing-04;
+  margin: 0;
+}
+
+.detailItem {
+  display: grid;
+  grid-template-columns: 8rem 1fr;
+  column-gap: spacing.$spacing-05;
+  align-items: start;
+
+  dt {
+    @include type.type-style('label-01');
+
+    color: $text-02;
+    margin: 0;
+  }
+
+  dd {
+    @include type.type-style('body-compact-01');
+
+    color: $ui-05;
+    margin: 0;
+  }
+}
+
+.emptyMessage {
+  @include type.type-style('body-compact-01');
+
+  color: $text-02;
+  margin: 0;
+}
+
+@media (max-width: 672px) {
+  .detailItem {
+    grid-template-columns: 1fr;
+    row-gap: spacing.$spacing-02;
+  }
+}

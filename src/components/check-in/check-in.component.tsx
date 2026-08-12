@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@carbon/react';
 import styles from './check-in.scss';
-import { launchStartVisitForm } from '../../active-visits/patient-queues.resource';
+import { launchStartVisitForm } from '../../active-visits/resources/patient-queues.resource';
 
 const CheckInLauncher: React.FC = () => {
   return (

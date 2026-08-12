@@ -14,7 +14,7 @@ export interface PatientQueue {
   datevoided: string;
   voidedby: string;
   patient: Patient;
-  provider: Provider;
+  provider: Provider | null;
   locationFrom: LocationFrom;
   locationTo: LocationTo;
   encounter: string;

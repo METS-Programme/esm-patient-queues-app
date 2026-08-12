@@ -1,0 +1,57 @@
+@use '@carbon/styles/scss/spacing';
+@use '@openmrs/esm-styleguide/src/vars' as *;
+
+.cardContainer {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: spacing.$spacing-03;
+  padding: 0 spacing.$spacing-05 spacing.$spacing-03 spacing.$spacing-03;
+  box-sizing: border-box;
+  background-color: $ui-02;
+}
+
+.tileWrapper {
+  min-width: 0;
+  flex: 1 1 calc(20% - #{spacing.$spacing-03});
+  max-width: calc(20% - #{spacing.$spacing-03});
+  width: 100%;
+  height: auto;
+}
+
+.tileWrapper>* {
+  width: 100%;
+  height: 100%;
+}
+
+/* Medium desktop: 3 per row */
+@media (max-width: 1312px) {
+  .tileWrapper {
+    flex-basis: calc(33.333% - #{spacing.$spacing-03});
+    max-width: calc(33.333% - #{spacing.$spacing-03});
+  }
+}
+
+/* Tablet: 2 per row */
+:global(.omrs-breakpoint-lt-desktop) {
+  .cardContainer {
+    padding-right: spacing.$spacing-03;
+  }
+
+  .tileWrapper {
+    flex-basis: calc(50% - #{spacing.$spacing-03});
+    max-width: calc(50% - #{spacing.$spacing-03});
+  }
+}
+
+/* Mobile: 1 per row */
+@media (max-width: 672px) {
+  .cardContainer {
+    padding: spacing.$spacing-03;
+  }
+
+  .tileWrapper {
+    flex-basis: 100%;
+    max-width: 100%;
+  }
+}

@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
+import { type PatientQueue } from '../types/patient-queues';
 
-export const buildStatusString = (status: string) => {
+export const buildStatusString = (status: string): string => {
   if (!status) {
     return '';
   }
@@ -10,17 +11,23 @@ export const buildStatusString = (status: string) => {
     return `Attending`;
   } else if (status === 'completed') {
     return `Finished`;
+  } else {
+    return status;
   }
 };
 
-export const trimVisitNumber = (visitNumber: string) => {
+export const trimVisitNumber = (visitNumber: string): string | undefined => {
   if (!visitNumber) {
     return;
   }
   return visitNumber.substring(15);
 };
 
-export const formatWaitTime = (minutes: number | null, t) => {
+interface TranslationFunction {
+  (key: string, defaultValue: string): string;
+}
+
+export const formatWaitTime = (minutes: number | null, t: TranslationFunction): string => {
   if (minutes === null || isNaN(minutes)) return t('unknown', 'Unknown');
 
   const hours = Math.floor(minutes / 60);
@@ -33,7 +40,7 @@ export const formatWaitTime = (minutes: number | null, t) => {
   }
 };
 
-export const getTagColor = (waitTime: string) => {
+export const getTagColor = (waitTime: string): string => {
   const num = parseInt(waitTime);
   if (num <= 30) {
     return 'green';
@@ -44,17 +51,17 @@ export const getTagColor = (waitTime: string) => {
   }
 };
 
-export const getProviderTagColor = (entryProvider: string, loggedInProviderName: string) => {
-  if (entryProvider === loggedInProviderName) {
-    return '#07a862';
-  } else {
-    return '#942509';
+export const getProviderTagColor = (entryProvider?: string, loggedInProviderName?: string): string => {
+  if (!entryProvider || !loggedInProviderName) {
+    return '#525252';
   }
+
+  return entryProvider === loggedInProviderName ? '#07a862' : '#942509';
 };
 
 export type amPm = 'AM' | 'PM';
 
-export const convertTime12to24 = (time12h, timeFormat: amPm) => {
+export const convertTime12to24 = (time12h: string, timeFormat: amPm): string[] => {
   let [hours] = time12h.split(':');
 
   if (hours === '12' && timeFormat === 'AM') {
@@ -62,13 +69,13 @@ export const convertTime12to24 = (time12h, timeFormat: amPm) => {
   }
 
   if (timeFormat === 'PM') {
-    hours = hours === '12' ? hours : parseInt(hours, 10) + 12;
+    hours = hours === '12' ? hours : String(parseInt(hours, 10) + 12);
   }
 
   return [hours];
 };
 
-export const getWaitTimeInMinutes = (queue) => {
+export const getWaitTimeInMinutes = (queue: PatientQueue | null): number | null => {
   if (!queue) return null;
 
   if (queue.status === 'COMPLETED') {

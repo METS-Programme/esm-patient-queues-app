@@ -1,296 +1,347 @@
 @use '@carbon/styles/scss/spacing';
 @use '@carbon/styles/scss/type';
-@use '@carbon/styles/scss/colors';
 @use '@openmrs/esm-styleguide/src/vars' as *;
 
-.cardContainer {
-    background-color: $ui-02;
+/* Page layout */
+
+.page {
+    width: 100%;
+    min-height: 100%;
+    background-color: $ui-background;
     display: flex;
-    justify-content: space-between;
-    padding: 0 spacing.$spacing-05 spacing.$spacing-07 spacing.$spacing-03;
-    flex-flow: row wrap;
-    margin-top: -(spacing.$spacing-03);
+    flex-direction: column;
 }
 
 .container {
-    :global(.cds--tabs.cds--tabs--contained .cds--tabs__nav-item--selected) {
-        background-color: transparent;
-        border-left: 1px solid $ui-03;
-        border-right: 1px solid $ui-03;
-    }
+    width: 100%;
+    background-color: $ui-background;
 }
 
-.elementContainer {
+/* Summary cards */
+
+.summarySection {
+    width: 100%;
     display: flex;
-    align-items: center;
-    position: relative;
-    flex-direction: column;
-
-    .countTag {
-        position: absolute;
-        font-size: 10px;
-        text-align: center;
-        color: $ui-01;
-        background-color: $danger;
-        padding: 0 4px;
-        border-radius: 50%;
-        top: -14px;
-        right: -5px;
-    }
+    flex-wrap: wrap;
+    gap: spacing.$spacing-03;
+    padding: 0 spacing.$spacing-05 spacing.$spacing-07 spacing.$spacing-03;
+    margin-top: -(spacing.$spacing-03);
+    background-color: $ui-02;
+    box-sizing: border-box;
 }
 
+.summarySection>* {
+    min-width: 0;
+    flex: 1 1 calc(50% - #{spacing.$spacing-03});
+}
+
+/* Reception actions */
 
 .headerContainer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem;
+    gap: spacing.$spacing-05;
+    padding: spacing.$spacing-05;
     background-color: $ui-background;
+}
+
+.headerTitleGroup {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.sectionTitle {
+    @include type.type-style('heading-compact-02');
+
+    color: $ui-05;
+    margin: 0;
+}
+
+.sectionSubtitle {
+    @include type.type-style('body-compact-01');
+
+    color: $text-02;
+    margin: spacing.$spacing-01 0 0;
 }
 
 .headerButtons {
     display: flex;
-    flex-flow: column;
-}
-
-.heading {
-    font-size: 20px;
-    font-weight: bold;
-}
-
-.filterContainer {
-    :global(.cds--dropdown__wrapper--inline) {
-        gap: 0;
-    }
-
-    :global(.cds--list-box__menu-icon) {
-        height: 1rem;
-    }
-
-    :global(.cds--dropdown--inline) :global(.cds--list-box__field) {
-        min-width: 12rem;
-    }
-}
-
-.tooltip :global(.cds--tooltip__trigger.cds--tooltip__trigger--definition) {
-    border-bottom: none;
-}
-
-.tag {
-    margin: 0.25rem 0;
-}
-
-.priorityTag {
-    @extend .tag;
-    @include type.type-style('label-01');
-    color: #943d00;
-    background-color: #ffc9a3;
-}
-
-.backgroundDataFetchingIndicator {
     align-items: center;
+    justify-content: flex-end;
+    gap: spacing.$spacing-03;
+    flex-shrink: 0;
+}
+
+.headerButtons :global(.cds--btn) {
+    min-width: 10rem;
+}
+
+/* Loading */
+
+.tableShell {
+    margin: spacing.$spacing-05;
+    border: 1px solid $ui-03;
+    background-color: $ui-01;
+}
+
+/* Table controls */
+
+.tableControls {
     display: flex;
-    flex: 1 1 0%;
-    justify-content: center;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: spacing.$spacing-05;
+    margin: 0 spacing.$spacing-05;
+    padding: spacing.$spacing-04 spacing.$spacing-05;
+    border: 1px solid $ui-03;
+    border-bottom: 0;
+    background-color: $ui-01;
+}
+
+.tableTitleGroup {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding-top: spacing.$spacing-02;
+}
+
+.tableTitle {
+    @include type.type-style('heading-compact-02');
+
+    color: $ui-05;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.tableSubtitle {
+    @include type.type-style('body-compact-01');
+
+    color: $text-02;
+    margin: spacing.$spacing-01 0 0;
+}
+
+.tableActions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: spacing.$spacing-03;
+    min-width: 0;
+    flex-wrap: wrap;
+}
+
+.filter {
+    min-width: 12rem;
+    max-width: 14rem;
+}
+
+.filter :global(.cds--list-box__field) {
+    background-color: $ui-02;
 }
 
 .search {
-    max-width: 16rem;
+    max-width: 18rem;
+    min-width: 16rem;
 
     input {
         background-color: $ui-02 !important;
     }
 }
 
+/* Table */
+
 .tableContainer {
-    border: 1px solid $ui-03;
     margin: 0 spacing.$spacing-05;
     padding: 0;
+    border: 1px solid $ui-03;
+    background-color: $ui-01;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
 
     a {
         text-decoration: none;
     }
 
     th {
+        @include type.type-style('label-01');
+
         color: $text-02;
+        background-color: $ui-02;
+    }
+
+    td {
+        @include type.type-style('body-compact-01');
+
+        vertical-align: middle;
     }
 
     :global(.cds--data-table) {
-        background-color: $ui-03;
+        background-color: $ui-01;
     }
 
-    .toolbarContent {
-        height: spacing.$spacing-07;
-        margin-bottom: spacing.$spacing-02;
+    :global(.cds--data-table tbody tr:hover td) {
+        background-color: $ui-02;
+    }
+}
 
-        :global(.cds--toolbar-search-container-active.cds--search) {
-            margin-right: 1rem;
+.activeVisitsTable {
+    tr:last-of-type {
+        td {
+            border-bottom: none;
         }
     }
 }
 
-.tableFilter {
-    display: flex;
-    flex-direction: row;
-    margin: 4rem;
+.visitNumber {
+    font-weight: 600;
 }
 
-.toggle {
-    margin: 2rem;
+.patientName {
+    color: $ui-05;
+    font-weight: 600;
 }
 
-.emptyRow {
-    padding: 0 1rem;
+.statusContainer {
+    display: inline-flex;
+    align-items: center;
+    gap: spacing.$spacing-02;
+
+    svg {
+        margin-right: 0;
+    }
+}
+
+.actionsContainer {
     display: flex;
     align-items: center;
+    gap: spacing.$spacing-02;
 }
 
-.activeVisitsTable tr:last-of-type {
-    td {
-        border-bottom: none;
-    }
-}
-
-.expandedActiveVisitRow {
-    :global(.cds--tab-content) {
-        padding: 0.5rem 0;
-    }
-
-    td {
-        padding: 0.5rem;
-
-        >div {
-            max-height: max-content !important;
-            background-color: $ui-02;
-        }
-    }
-
-    th[colspan] td[colspan]>div:first-child {
-        padding: 0 1rem;
-    }
-}
-
-.hiddenRow {
-    display: none;
-}
-
-.content {
-    @include type.type-style('heading-compact-02');
-    color: $text-02;
-    margin-bottom: 0.5rem;
-}
-
-.helper {
-    @include type.type-style('body-compact-01');
-    color: $text-02;
-}
-
-.separator {
-    @include type.type-style('body-compact-02');
-    color: $text-02;
-    width: 80%;
-    margin: 1.5rem auto;
-    overflow: hidden;
-    text-align: center;
-
-    &::before,
-    &::after {
-        background-color: $text-03;
-        content: '';
-        display: inline-block;
-        height: 1px;
-        position: relative;
-        vertical-align: middle;
-        width: 50%;
-    }
-
-    &::before {
-        right: 0.5rem;
-        margin-left: -50%;
-    }
-
-    &::after {
-        left: 0.5rem;
-        margin-right: -50%;
-    }
-}
+/* Empty state */
 
 .tileContainer {
-    background-color: $ui-02;
+    padding: spacing.$spacing-11 0;
     border-top: 1px solid $ui-03;
-    padding: 5rem 0;
+    background-color: $ui-01;
 }
 
 .tile {
-    margin: auto;
     width: fit-content;
+    max-width: 24rem;
+    margin: auto;
+    border: 1px solid $ui-03;
+    background-color: $ui-02;
 }
 
 .tileContent {
     display: flex;
     flex-direction: column;
     align-items: center;
+    text-align: center;
 }
 
-.menuItem {
-    max-width: none;
-}
-
-.desktopHeading {
-    h4 {
-        @include type.type-style('heading-compact-02');
-        color: $text-02;
-    }
-}
-
-.tabletHeading {
-    h4 {
-        @include type.type-style('heading-03');
-        color: $text-02;
-    }
-}
-
-.desktopHeading,
-.tabletHeading {
-    text-align: left;
-    text-transform: capitalize;
-    margin-bottom: spacing.$spacing-05;
-
-    h4:after {
-        content: '';
-        display: block;
-        width: 2rem;
-        padding-top: 3px;
-        border-bottom: 0.375rem solid var(--brand-03);
-    }
-}
-
-.statusContainer {
-    display: flex;
-    align-items: center;
-
-    svg {
-        margin-right: 0.5rem;
-    }
-}
-
-.visitType {
+.content {
     @include type.type-style('heading-compact-02');
+
+    color: $ui-05;
+    margin-bottom: spacing.$spacing-03;
 }
 
-.headerBtnContainer {
-    background-color: $ui-background;
-    padding: spacing.$spacing-05;
-    text-align: right;
+.helper {
+    @include type.type-style('body-compact-01');
+
+    color: $text-02;
+    margin: 0;
 }
 
-.addPatientToListBtn {
-    margin-left: spacing.$spacing-05;
-    height: spacing.$spacing-09;
+/* Pagination */
+
+.paginationOverride {
+    margin: 0 spacing.$spacing-05 spacing.$spacing-05;
+    border: 1px solid $ui-03;
+    border-top: 0;
+    background-color: $ui-01;
 }
 
-.editIcon {
-    color: $interactive-01;
-    margin-top: 0.5rem;
-    cursor: pointer;
+/* Tablet */
+
+:global(.omrs-breakpoint-lt-desktop) {
+    .summarySection {
+        padding-right: spacing.$spacing-03;
+    }
+
+    .headerContainer {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .headerButtons {
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    .tableControls {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .tableActions {
+        justify-content: flex-start;
+        width: 100%;
+    }
+}
+
+/* Mobile */
+
+@media (max-width: 672px) {
+    .summarySection {
+        padding: spacing.$spacing-03;
+        margin-top: 0;
+    }
+
+    .summarySection>* {
+        flex-basis: 100%;
+    }
+
+    .headerContainer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .headerButtons {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .headerButtons :global(.cds--btn) {
+        width: 100%;
+        max-width: none;
+    }
+
+    .tableControls {
+        margin: 0 spacing.$spacing-03;
+        padding: spacing.$spacing-03;
+    }
+
+    .tableActions {
+        align-items: stretch;
+        flex-direction: column;
+        gap: spacing.$spacing-03;
+    }
+
+    .filter,
+    .search {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .tableContainer {
+        margin: 0 spacing.$spacing-03;
+    }
+
+    .paginationOverride {
+        margin: 0 spacing.$spacing-03 spacing.$spacing-03;
+    }
 }

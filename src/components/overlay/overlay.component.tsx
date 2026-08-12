@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useId } from 'react';
 import { Button, Header } from '@carbon/react';
 import { ArrowLeft, Close } from '@carbon/react/icons';
 import { isDesktop, useLayoutType } from '@openmrs/esm-framework';
+
 import styles from './overlay.scss';
 
 interface OverlayProps {
@@ -12,18 +13,42 @@ interface OverlayProps {
 
 const Overlay: React.FC<OverlayProps> = ({ closePanel, children, header }) => {
   const layout = useLayoutType();
+  const isDesktopLayout = isDesktop(layout);
+  const titleId = useId();
+
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        closePanel();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [closePanel]);
 
   return (
-    <div className={isDesktop(layout) ? styles.desktopOverlay : styles.tabletOverlay}>
-      {isDesktop(layout) ? (
+    <aside
+      className={isDesktopLayout ? styles.desktopOverlay : styles.tabletOverlay}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+    >
+      {isDesktopLayout ? (
         <div className={styles.desktopHeader}>
-          <div className={styles.headerContent}>{header}</div>
+          <h2 id={titleId} className={styles.headerContent}>
+            {header}
+          </h2>
+
           <Button
             className={styles.closePanelButton}
             onClick={closePanel}
             kind="ghost"
             hasIconOnly
-            renderIcon={(props) => <Close size={16} {...props} />}
+            renderIcon={Close}
             iconDescription="Close overlay"
           />
         </div>
@@ -31,15 +56,20 @@ const Overlay: React.FC<OverlayProps> = ({ closePanel, children, header }) => {
         <Header aria-label="Tablet overlay" className={styles.tabletOverlayHeader}>
           <Button
             onClick={closePanel}
+            kind="ghost"
             hasIconOnly
-            renderIcon={(props) => <ArrowLeft size={16} {...props} />}
+            renderIcon={ArrowLeft}
             iconDescription="Close overlay"
           />
-          <div className={styles.headerContent}>{header}</div>
+
+          <h2 id={titleId} className={styles.headerContent}>
+            {header}
+          </h2>
         </Header>
       )}
-      <div>{children}</div>
-    </div>
+
+      <div className={styles.overlayContent}>{children}</div>
+    </aside>
   );
 };
 

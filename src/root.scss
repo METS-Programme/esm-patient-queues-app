@@ -1,15 +1,19 @@
-@use '@carbon/styles/scss/spacing';
 @use '@carbon/styles/scss/type';
+@use '@carbon/styles/scss/colors';
+@use '@carbon/styles/scss/spacing';
 @use '@openmrs/esm-styleguide/src/vars' as *;
 
-.productiveHeading01 {
-  @include type.type-style('heading-compact-01');
+.container {
+  width: 100%;
+  min-height: calc(100vh - #{spacing.$spacing-09});
+  background-color: $ui-background;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
-.productiveHeading02 {
-  @include type.type-style('heading-compact-02');
-}
-
-.bodyLong01 {
-  @include type.type-style('body-01');
+:global(.omrs-breakpoint-gt-tablet) {
+  .container {
+    margin-left: var(--omrs-sidenav-width);
+    width: calc(100% - var(--omrs-sidenav-width));
+  }
 }

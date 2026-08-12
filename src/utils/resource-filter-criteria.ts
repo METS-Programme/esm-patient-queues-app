@@ -6,6 +6,7 @@ export enum ResourceRepresentation {
 }
 
 export interface ResourceFilterCriteria extends PagingCriteria {
+  [key: string]: any;
   v?: ResourceRepresentation | null | string;
   q?: string | null;
   totalCount?: boolean | null;
