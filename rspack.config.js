@@ -1,5 +1,5 @@
 const path = require('path');
-const config = (module.exports = require('openmrs/default-webpack-config'));
+const config = (module.exports = require('openmrs/default-rspack-config'));
 config.scriptRuleConfig.exclude =
   path.sep == '/'
     ? /(node_modules[^\/@openmrs\/esm\-patient\-common\-lib, ^\/@ohri\/openmrs\-esm\-ohri\-commons\-lib])/

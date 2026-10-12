@@ -31,12 +31,12 @@
     margin-right: spacing.$spacing-03;
   }
 
-  tr td:first-child {
+  .container tr td:first-child {
     font-weight: bold;
     padding-right: spacing.$spacing-03;
   }
 
-  tr td:nth-child(2) {
+  .container tr td:nth-child(2) {
     font-weight: normal;
   }
 

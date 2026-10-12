@@ -11,10 +11,10 @@
   ],
   "scripts": {
     "start": "openmrs develop",
-    "serve": "webpack serve --mode=development",
+    "serve": "rspack serve --mode=development",
     "debug": "npm run serve",
-    "build": "webpack --mode production",
-    "analyze": "webpack --mode=production --env.analyze=true",
+    "build": "rspack --mode production",
+    "analyze": "rspack --mode=production --env.analyze=true",
     "lint": "eslint src --ext tsx,ts --fix --max-warnings=0",
     "verify": "turbo run lint && turbo run typescript",
     "prettier": "prettier --config prettier.config.js --write \"src/**/*.{ts,tsx,css,scss}\"",
