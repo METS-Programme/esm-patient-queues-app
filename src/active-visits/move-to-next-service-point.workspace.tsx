@@ -13,7 +13,6 @@ import {
   ButtonSet,
 } from '@carbon/react';
 import {
-  type DefaultWorkspaceProps,
   navigate,
   restBaseUrl,
   showNotification,

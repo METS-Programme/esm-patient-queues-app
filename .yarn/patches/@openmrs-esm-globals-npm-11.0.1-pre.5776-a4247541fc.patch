@@ -1,0 +1,20 @@
+diff --git a/src/types.ts b/src/types.ts
+index 6c1f7a62c36648d3188f4365123dd2bcfce654d5..6d745416f6b1e3a93950fb00706cfa0353920041 100644
+--- a/src/types.ts
++++ b/src/types.ts
+@@ -1,10 +1,11 @@
+ import type { i18n } from 'i18next';
+ 
+ declare global {
+-  const __webpack_share_scopes__: Record<
+-    string,
+-    Record<string, { loaded?: 1; get: () => Promise<unknown>; from: string; eager: boolean }>
+-  >;
++  // NOTE: `__webpack_share_scopes__` is intentionally NOT declared here.
++  // It is already declared in `dist/types.d.ts`; declaring it in both the
++  // source and dist copies causes TS2451 ("Cannot redeclare block-scoped
++  // variable") because the dist declarations get pulled into the same
++  // program via `@openmrs/esm-framework`'s dist index.
+ 
+   var __webpack_init_sharing__: (scope: string) => Promise<void>;
+ 

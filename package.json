@@ -64,9 +64,9 @@
     "react-router-dom": "6.x"
   },
   "devDependencies": {
-    "@openmrs/esm-framework": "next",
-    "@openmrs/esm-patient-common-lib": "next",
-    "@openmrs/esm-styleguide": "next",
+    "@openmrs/esm-framework": "^11.0.1-pre.5776",
+    "@openmrs/esm-patient-common-lib": "^13.0.1-pre.12704",
+    "@openmrs/esm-styleguide": "^11.0.1-pre.5776",
     "@swc/cli": "^0.1.57",
     "@swc/core": "^1.3.6",
     "@swc/jest": "^0.2.23",
@@ -100,7 +100,7 @@
     "jest-cli": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "lodash": "^4.17.21",
-    "openmrs": "next",
+    "openmrs": "^11.0.1-pre.5776",
     "prettier": "^3.0.3",
     "pretty-quick": "^3.1.3",
     "react": "^18.3.1",
@@ -117,5 +117,9 @@
     "typescript": "^5.0.2",
     "webpack-bundle-analyzer": "^4.4.0"
   },
-  "packageManager": "yarn@4.9.2"
+  "packageManager": "yarn@4.9.2",
+  "resolutions": {
+    "@internationalized/date": "3.12.4",
+    "@openmrs/esm-globals@npm:11.0.1-pre.5776": "patch:@openmrs/esm-globals@npm%3A11.0.1-pre.5776#~/.yarn/patches/@openmrs-esm-globals-npm-11.0.1-pre.5776-a4247541fc.patch"
+  }
 }
