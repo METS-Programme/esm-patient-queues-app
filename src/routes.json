@@ -66,9 +66,6 @@
             "name": "queue-reception-dashboard-link",
             "component": "queueReceptionDashboardLink",
             "slot": "homepage-dashboard-slot",
-            "privilege": [
-                "reception"
-            ],
             "meta": {
                 "name": "reception-patient-queues",
                 "slot": "patient-queues-reception-room-dashboard-slot",
@@ -79,9 +76,6 @@
             "name": "queue-triage-dashboard-link",
             "component": "queueTriageDashboardLink",
             "slot": "homepage-dashboard-slot",
-            "privilege": [
-                "triage"
-            ],
             "meta": {
                 "name": "triage-patient-queues",
                 "slot": "patient-queues-triage-room-dashboard-slot",
@@ -92,9 +86,6 @@
             "name": "queue-clinical-room-dashboard-link",
             "component": "queueClinicalRoomDashboardLink",
             "slot": "homepage-dashboard-slot",
-            "privilege": [
-                "clinician"
-            ],
             "meta": {
                 "name": "clinical-room-patient-queues",
                 "slot": "patient-queues-clinical-room-dashboard-slot",
