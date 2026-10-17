@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 
 import styles from './queue-reception-home.scss';
 
-import { useSession } from '@openmrs/esm-framework';
+import { useConfig, useSession } from '@openmrs/esm-framework';
 
 import {
   DataTable,
@@ -41,8 +41,10 @@ import EditActionsMenu from '../active-visits/edit-action-menu.components';
 import PrintActionsMenu from '../active-visits/print-action-menu.components';
 import CheckInLauncher from '../components/check-in/check-in.component';
 import PatientQueueHeader from '../components/patient-queue-header/patient-queue-header.component';
+import PrivilegeGate from '../components/privilege-gate/privilege-gate.component';
 import QueueLauncher from '../components/queue-launcher/queue-launcher.component';
 import SummaryTile from '../summary-tiles/summary-tile.component';
+import { type PatientQueueConfig } from '../config-schema';
 
 const ReceptionHome: React.FC = () => {
   const { t } = useTranslation();
@@ -266,4 +268,14 @@ const ReceptionHome: React.FC = () => {
   );
 };
 
-export default ReceptionHome;
+const GatedReceptionHome: React.FC = () => {
+  const config = useConfig<PatientQueueConfig>();
+
+  return (
+    <PrivilegeGate privilege={config.receptionDashboardPrivilege}>
+      <ReceptionHome />
+    </PrivilegeGate>
+  );
+};
+
+export default GatedReceptionHome;

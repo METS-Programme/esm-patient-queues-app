@@ -1,32 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
 import { useTranslation } from 'react-i18next';
 import styles from '../active-visits/active-visits-table.scss';
 import { Tabs, TabPanel, TabList, Tab, TabPanels } from '@carbon/react';
-import { useSession, userHasAccess } from '@openmrs/esm-framework';
+import { useConfig } from '@openmrs/esm-framework';
 import PatientQueueHeader from '../components/patient-queue-header/patient-queue-header.component';
-import { APP_PATIENTQUEUE_CLINICIAN_DASHBOARD } from '../config/privileges';
+import PrivilegeGate from '../components/privilege-gate/privilege-gate.component';
 import QueueSummaryTiles from '../summary-tiles/queue-summary-tiles.component';
 import ActiveClinicalVisitsTable from '../active-visits/queue-patients-clinical/queue-clinical-table.component';
+import { type PatientQueueConfig } from '../config-schema';
 import { QueueStatus } from '../utils/utils';
 
 const ClinicalRoomHome: React.FC = () => {
   const { t } = useTranslation();
-
-  const [canViewDashboard, setCanViewDashboard] = useState(false);
-  const userSession = useSession();
-  useEffect(() => {
-    setCanViewDashboard(userSession?.user && userHasAccess(APP_PATIENTQUEUE_CLINICIAN_DASHBOARD, userSession.user));
-  }, [userSession]);
+  const config = useConfig<PatientQueueConfig>();
 
   return (
-    <div>
-      <PatientQueueHeader title="Clinical Room" />
-      <QueueSummaryTiles />
+    <PrivilegeGate privilege={config.clinicianDashboardPrivilege}>
+      <div>
+        <PatientQueueHeader title="Clinical Room" />
+        <QueueSummaryTiles />
 
-      {/* table data */}
+        {/* table data */}
 
-      {canViewDashboard && (
         <div className={styles.container}>
           <Tabs>
             <TabList style={{ paddingLeft: '1rem' }} aria-label="clinical outpatient tabs" contained>
@@ -43,8 +39,8 @@ const ClinicalRoomHome: React.FC = () => {
             </TabPanels>
           </Tabs>
         </div>
-      )}
-    </div>
+      </div>
+    </PrivilegeGate>
   );
 };
 

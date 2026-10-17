@@ -1,31 +1,27 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tabs, TabPanel, TabList, Tab, TabPanels } from '@carbon/react';
 import styles from './queue-triage-home.scss';
-import { useSession, userHasAccess } from '@openmrs/esm-framework';
+import { useConfig } from '@openmrs/esm-framework';
 import ActiveTriageVisitsTable from '../active-visits/queue-patients-triage/queue-triage-table.component';
 import PatientQueueHeader from '../components/patient-queue-header/patient-queue-header.component';
-import { APP_PATIENTQUEUE_TRIAGE_DASHBOARD } from '../config/privileges';
+import PrivilegeGate from '../components/privilege-gate/privilege-gate.component';
 import QueueSummaryTiles from '../summary-tiles/queue-summary-tiles.component';
+import { type PatientQueueConfig } from '../config-schema';
 import { QueueStatus } from '../utils/utils';
 
 const TriageHome: React.FC = () => {
   const { t } = useTranslation();
-
-  const [canViewDashboard, setCanViewDashboard] = useState(false);
-  const userSession = useSession();
-  useEffect(() => {
-    setCanViewDashboard(userSession?.user && userHasAccess(APP_PATIENTQUEUE_TRIAGE_DASHBOARD, userSession.user));
-  }, [userSession]);
+  const config = useConfig<PatientQueueConfig>();
 
   return (
-    <div>
-      <PatientQueueHeader title="Triage" />
-      <QueueSummaryTiles />
+    <PrivilegeGate privilege={config.triageDashboardPrivilege}>
+      <div>
+        <PatientQueueHeader title="Triage" />
+        <QueueSummaryTiles />
 
-      {/* table data */}
+        {/* table data */}
 
-      {canViewDashboard && (
         <div className={styles.container}>
           <Tabs>
             <TabList style={{ paddingLeft: '1rem' }} aria-label="triage outpatient tabs" contained>
@@ -42,8 +38,8 @@ const TriageHome: React.FC = () => {
             </TabPanels>
           </Tabs>
         </div>
-      )}
-    </div>
+      </div>
+    </PrivilegeGate>
   );
 };
 

@@ -17,6 +17,21 @@ export const configSchema = {
       'Location tag identifying queue rooms. Set to the tag UUID in config.json; the default matches tags named "Queue Room"',
     _default: 'Queue Room',
   },
+  receptionDashboardPrivilege: {
+    _type: Type.String,
+    _description: 'Privilege required to view the reception room page',
+    _default: 'App: patientQueue.reception.dashboard',
+  },
+  triageDashboardPrivilege: {
+    _type: Type.String,
+    _description: 'Privilege required to view the triage room page',
+    _default: 'App: patientQueue.triage.dashboard',
+  },
+  clinicianDashboardPrivilege: {
+    _type: Type.String,
+    _description: 'Privilege required to view the clinical room page',
+    _default: 'App: patientQueue.clinician.dashboard',
+  },
   showExtraVisitAttributesSlot: {
     _type: Type.Boolean,
     _description:
@@ -29,5 +44,8 @@ export interface PatientQueueConfig {
   triageRoomTag: string;
   clinicalRoomTag: string;
   queueRoomTag: string;
+  receptionDashboardPrivilege: string;
+  triageDashboardPrivilege: string;
+  clinicianDashboardPrivilege: string;
   showExtraVisitAttributesSlot?: boolean;
 }
