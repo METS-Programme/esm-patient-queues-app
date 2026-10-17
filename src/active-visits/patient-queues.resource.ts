@@ -8,6 +8,7 @@ import {
   usePagination,
 } from '@openmrs/esm-framework';
 import { type PatientQueue } from '../types/patient-queues';
+import { getSessionLocationApiUrl } from '../hooks/useQueueRooms';
 import { type NewVisitPayload, type ProviderResponse } from '../types';
 import { type ResourceFilterCriteria, ResourceRepresentation, toQueryParams } from '../utils/resource-filter-criteria';
 import { type PageableResult } from '../utils/pageable-result';
@@ -112,10 +113,13 @@ export interface ChildLocation {
 
 // get parentlocation
 export function useParentLocation(currentQueueLocationUuid: string) {
-  const apiUrl = `${restBaseUrl}/location/${currentQueueLocationUuid}`;
+  // same URL (SWR key) as useQueueRoomLocations, so the page header's fetch
+  // warms the cache the check-in form reads from
+  const apiUrl = getSessionLocationApiUrl(currentQueueLocationUuid);
   const { data, error, isLoading, isValidating, mutate } = useSWR<{ data: LocationResponse }, Error>(
     apiUrl,
     openmrsFetch,
+    { revalidateOnFocus: false, dedupingInterval: 60_000 },
   );
 
   return {
@@ -145,11 +149,11 @@ export function useChildLocations(parentUuid: string) {
 
 // Fetch providers of a service point
 export function useProviders(selectedNextQueueLocation: string) {
-  const apiUrl = `${restBaseUrl}/provider?q=&v=full`;
+  const apiUrl = `${restBaseUrl}/provider?q=&v=custom:(uuid,display,attributes:(value,attributeType:(display)))`;
   const { data, error, isLoading, isValidating, mutate } = useSWR<
     { data: { results: Array<ProviderResponse> } },
     Error
-  >(apiUrl, openmrsFetch);
+  >(apiUrl, openmrsFetch, { revalidateOnFocus: false, dedupingInterval: 60_000 });
 
   // Filter providers based on the selected location
   const providers =

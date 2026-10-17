@@ -36,6 +36,11 @@
 .section {
   margin: spacing.$spacing-03;
 }
+
+.section :global(.cds--form-item) {
+  width: 100%;
+  max-width: 100%;
+}
 .errorMessage {
   color: #d93025;
   font-size: 0.875rem;

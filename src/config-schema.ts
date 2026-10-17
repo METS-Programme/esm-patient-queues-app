@@ -11,6 +11,12 @@ export const configSchema = {
     _description: 'This is clinical room tag',
     _default: '96be1b53-e65c-494b-be41-b36899cb5d09',
   },
+  queueRoomTag: {
+    _type: Type.String,
+    _description:
+      'Location tag identifying queue rooms. Set to the tag UUID in config.json; the default matches tags named "Queue Room"',
+    _default: 'Queue Room',
+  },
   showExtraVisitAttributesSlot: {
     _type: Type.Boolean,
     _description:
@@ -22,5 +28,6 @@ export const configSchema = {
 export interface PatientQueueConfig {
   triageRoomTag: string;
   clinicalRoomTag: string;
+  queueRoomTag: string;
   showExtraVisitAttributesSlot?: boolean;
 }

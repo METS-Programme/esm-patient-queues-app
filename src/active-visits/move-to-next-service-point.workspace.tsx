@@ -24,6 +24,7 @@ import {
 } from '@openmrs/esm-framework';
 import { useTranslation } from 'react-i18next';
 import { useQueueRoomLocations } from '../hooks/useQueueRooms';
+import { QueueRoomSelectOptions } from '../components/queue-room-options.component';
 import styles from './move-to-next-service-point.scss';
 import { QueueStatus, extractErrorMessagesFromResponse, handleMutate } from '../utils/utils';
 import {
@@ -75,7 +76,9 @@ const MoveToNextServicePointForm: React.FC<
   const { queueRoomLocations, error: errorLoadingQueueRooms } = useQueueRoomLocations(
     sessionUser?.sessionLocation?.uuid,
   );
-  const [selectedNextQueueLocation, setSelectedNextQueueLocation] = useState(queueRoomLocations[0]?.uuid);
+  const [selectedNextQueueLocation, setSelectedNextQueueLocation] = useState(
+    queueRoomLocations.find((option) => option.selectable)?.uuid,
+  );
   const { providers, error: errorLoadingProviders } = useProviders(selectedNextQueueLocation);
 
   // Memoized constants
@@ -392,7 +395,7 @@ const MoveToNextServicePointForm: React.FC<
                 <Controller
                   name="locationTo"
                   control={control}
-                  defaultValue={queueRoomLocations[0]?.uuid || sessionUser?.sessionLocation?.uuid}
+                  defaultValue={queueRoomLocations.find((option) => option.selectable)?.uuid || sessionUser?.sessionLocation?.uuid}
                   render={({ field }) => (
                     <Select
                       {...field}
@@ -413,9 +416,7 @@ const MoveToNextServicePointForm: React.FC<
                         <SelectItem value="" text={t('selectNextServicePoint', 'Choose next service point')} />
                       )}
 
-                      {queueRoomLocations.map(({ uuid, display }) => (
-                        <SelectItem key={uuid} value={uuid} text={display} />
-                      ))}
+                      <QueueRoomSelectOptions options={queueRoomLocations} />
                     </Select>
                   )}
                 />

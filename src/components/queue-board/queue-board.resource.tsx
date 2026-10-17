@@ -1,4 +1,3 @@
-import { type QueueRoomsResponse } from '../../hooks/useQueueRooms';
 import useSWR from 'swr';
 import { openmrsFetch, restBaseUrl, useSession } from '@openmrs/esm-framework';
 import { type PatientQueue } from '../../types/patient-queues';
@@ -7,13 +6,13 @@ export function usePatientQueuesByParentLocation(status: string) {
   const session = useSession();
   const locationUuid = session?.sessionLocation?.uuid;
 
-  const locationApiUrl = locationUuid ? `${restBaseUrl}/location/${locationUuid}?v=full` : null;
+  const locationApiUrl = locationUuid ? `${restBaseUrl}/location/${locationUuid}?v=custom:(parentLocation:(uuid))` : null;
   const {
     data: queueRoomsData,
     error: queueRoomError,
     isLoading: queueRoomLoading,
   } = useSWR<{
-    data: QueueRoomsResponse;
+    data: { parentLocation?: { uuid?: string } };
   }>(locationApiUrl, openmrsFetch);
 
   const parentLocationUuid = queueRoomsData?.data?.parentLocation?.uuid;

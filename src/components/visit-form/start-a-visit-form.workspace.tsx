@@ -35,6 +35,7 @@ import {
 } from '../../active-visits/patient-queues.resource';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { QueueRoomSelectOptions } from '../queue-room-options.component';
 import {
   type CreateQueueEntryFormData,
   createQueueEntrySchema,
@@ -271,7 +272,7 @@ const StartVisitForm: React.FC<
             <Controller
               name="locationTo"
               control={control}
-              defaultValue={queueRoomLocations.length > 0 ? queueRoomLocations[0].uuid : ''}
+              defaultValue={queueRoomLocations.find((option) => option.selectable)?.uuid ?? ''}
               render={({ field }) => (
                 <Select
                   {...field}
@@ -290,11 +291,7 @@ const StartVisitForm: React.FC<
                   {!field.value ? (
                     <SelectItem text={t('selectNextServicePoint', 'Choose next service point')} value="" />
                   ) : null}
-                  {queueRoomLocations.map((location) => (
-                    <SelectItem key={location.uuid} text={location.display} value={location.uuid}>
-                      {location.display}
-                    </SelectItem>
-                  ))}
+                  <QueueRoomSelectOptions options={queueRoomLocations} />
                 </Select>
               )}
             />

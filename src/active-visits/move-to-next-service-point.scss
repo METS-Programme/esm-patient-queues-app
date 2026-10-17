@@ -30,6 +30,11 @@
     margin: spacing.$spacing-03;
 }
 
+.section :global(.cds--form-item) {
+    width: 100%;
+    max-width: 100%;
+}
+
 .sectionTitle {
     @include type.type-style('heading-compact-02');
     color: $text-02;
