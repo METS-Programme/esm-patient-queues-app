@@ -137,6 +137,10 @@ interface QueueRoomLocationNode {
     uuid: string;
     display: string;
   }>;
+  parentLocation?: {
+    uuid: string;
+    display: string;
+  };
   childLocations?: QueueRoomLocationNode[];
 }
 
@@ -157,10 +161,16 @@ const childLocationsRep = (level: number): string =>
     ? 'childLocations:(uuid,display,retired,tags:(uuid,display))'
     : `childLocations:(uuid,display,retired,tags:(uuid,display),${childLocationsRep(level - 1)})`;
 
-const isQueueRoom = (location: QueueRoomLocationNode, queueRoomTag: string) =>
-  location.tags?.some(
-    (tag) => tag?.uuid === queueRoomTag || tag?.display?.toLowerCase() === queueRoomTag?.toLowerCase(),
+/** matches a location tag by uuid or display name, so sites can configure either */
+export const locationHasTag = (
+  location: { tags?: Array<{ uuid: string; display: string }> } | null | undefined,
+  tag: string,
+) =>
+  location?.tags?.some(
+    (item) => item?.uuid === tag || item?.display?.toLowerCase() === tag?.toLowerCase(),
   ) ?? false;
+
+const isQueueRoom = (location: QueueRoomLocationNode, queueRoomTag: string) => locationHasTag(location, queueRoomTag);
 
 /** returns the node as an option followed by its selectable descendants, or null when the subtree has none */
 function collectQueueRoomOptions(
@@ -212,6 +222,47 @@ export function useQueueRoomLocations(currentQueueLocation: string) {
       .filter((options): options is QueueRoomOption[] => options != null)
       .flat();
   }, [data?.data?.parentLocation?.childLocations, data?.data?.childLocations, queueRoomTag]);
+  return {
+    queueRoomLocations,
+    isLoading,
+    error,
+    mutate,
+  };
+}
+
+const allLocationsApiUrl = `${restBaseUrl}/location?v=custom:(uuid,display,retired,tags:(uuid,display),parentLocation:(uuid,display))&limit=100`;
+
+/**
+ * Queue rooms across the whole location tree, not just the session location's
+ * siblings. The server returns locations flat, so the hierarchy is assembled
+ * client-side by parentLocation before collecting queue room options; `enabled`
+ * gates the fetch (a null SWR key skips it).
+ */
+export function useAllQueueRoomLocations(enabled: boolean) {
+  const { queueRoomTag } = useConfig<PatientQueueConfig>();
+  const { data, error, isLoading, mutate } = useSWR<{ data: { results: QueueRoomLocationNode[] } }>(
+    enabled ? allLocationsApiUrl : null,
+    openmrsFetch,
+    locationSwrConfig,
+  );
+
+  const queueRoomLocations = useMemo(() => {
+    const allLocations = [...(data?.data?.results ?? [])].sort((a, b) => a.display.localeCompare(b.display));
+    const nodes = new Map<string, QueueRoomLocationNode>();
+    allLocations.forEach((location) => nodes.set(location.uuid, { ...location, childLocations: [] }));
+    allLocations.forEach((location) => {
+      const parent = location.parentLocation ? nodes.get(location.parentLocation.uuid) : undefined;
+      parent?.childLocations?.push(nodes.get(location.uuid) as QueueRoomLocationNode);
+    });
+    const roots = allLocations
+      .filter((location) => !location.parentLocation || !nodes.has(location.parentLocation.uuid))
+      .map((location) => nodes.get(location.uuid) as QueueRoomLocationNode);
+    return roots
+      .map((root) => collectQueueRoomOptions(root, queueRoomTag, 0))
+      .filter((options): options is QueueRoomOption[] => options != null)
+      .flat();
+  }, [data?.data?.results, queueRoomTag]);
+
   return {
     queueRoomLocations,
     isLoading,

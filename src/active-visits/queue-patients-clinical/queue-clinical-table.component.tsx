@@ -22,6 +22,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useSession, useLayoutType, isDesktop, useConfig } from '@openmrs/esm-framework';
 import { getOriginFromPathName, useParentLocation, usePatientQueuePages } from '../patient-queues.resource';
+import { locationHasTag } from '../../hooks/useQueueRooms';
 import {
   buildStatusString,
   formatWaitTime,
@@ -143,8 +144,11 @@ const ActiveClinicalVisitsTable: React.FC<ActiveVisitsTableProps> = ({ status })
       entries = entries.filter((entry) => entry?.patient?.person?.display?.toLowerCase()?.includes(lowercasedTerm));
     }
 
-    // Correct filtering for queueRoom tags
-    entries = entries.filter((entry) => entry?.queueRoom?.tags?.some((item) => item.uuid === clinicalRoomTag));
+    // keep entries whose room carries the clinical tag; a room whose tags are
+    // missing can't be identified, so it is kept rather than dropped
+    entries = entries.filter(
+      (entry) => !entry?.queueRoom?.tags?.length || locationHasTag(entry.queueRoom, clinicalRoomTag),
+    );
 
     // Sort entries based on `status` and creation time
     entries.sort((a, b) => {
