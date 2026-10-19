@@ -41,6 +41,17 @@
     margin-bottom: spacing.$spacing-04;
 }
 
+.sectionTitleRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: spacing.$spacing-04;
+
+    .sectionTitle {
+        margin-bottom: 0;
+    }
+}
+
 .errorMessage {
     color: #d93025;
     font-size: 0.875rem;

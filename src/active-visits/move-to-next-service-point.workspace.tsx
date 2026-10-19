@@ -12,6 +12,7 @@ import {
   InlineNotification,
   ButtonSet,
 } from '@carbon/react';
+import { Earth } from '@carbon/react/icons';
 import {
   navigate,
   restBaseUrl,
@@ -23,7 +24,7 @@ import {
   type Workspace2DefinitionProps,
 } from '@openmrs/esm-framework';
 import { useTranslation } from 'react-i18next';
-import { useQueueRoomLocations } from '../hooks/useQueueRooms';
+import { useAllQueueRoomLocations, useQueueRoomLocations } from '../hooks/useQueueRooms';
 import { QueueRoomSelectOptions } from '../components/queue-room-options.component';
 import styles from './move-to-next-service-point.scss';
 import { QueueStatus, extractErrorMessagesFromResponse, handleMutate } from '../utils/utils';
@@ -71,13 +72,22 @@ const MoveToNextServicePointForm: React.FC<
   const [comment, setComment] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAllLocations, setShowAllLocations] = useState(false);
 
   // Data Fetching Hooks
-  const { queueRoomLocations, error: errorLoadingQueueRooms } = useQueueRoomLocations(
+  const { queueRoomLocations: siblingRooms, error: errorLoadingSiblingRooms } = useQueueRoomLocations(
     sessionUser?.sessionLocation?.uuid,
   );
+  const { queueRoomLocations: allRooms, error: errorLoadingAllRooms, isLoading: isLoadingAllRooms } =
+    useAllQueueRoomLocations(showAllLocations);
+
+  // the sibling view stays the default; expanding lifts the parent-location
+  // scope to the whole tree while keeping the Queue Room tag filter
+  const queueRoomLocations = showAllLocations ? allRooms : siblingRooms;
+  const errorLoadingQueueRooms = showAllLocations ? errorLoadingAllRooms : errorLoadingSiblingRooms;
+
   const [selectedNextQueueLocation, setSelectedNextQueueLocation] = useState(
-    queueRoomLocations.find((option) => option.selectable)?.uuid,
+    siblingRooms.find((option) => option.selectable)?.uuid,
   );
   const { providers, error: errorLoadingProviders } = useProviders(selectedNextQueueLocation);
 
@@ -156,6 +166,7 @@ const MoveToNextServicePointForm: React.FC<
   const {
     handleSubmit,
     control,
+    setValue,
     formState: { errors },
   } = useForm<CreateQueueEntryFormData>({
     mode: 'all',
@@ -173,6 +184,19 @@ const MoveToNextServicePointForm: React.FC<
   useEffect(() => {
     setStatus(statusLabels[statusSwitcherIndex].status);
   }, [statusSwitcherIndex, statusLabels]);
+
+  // when the option list arrives or the expanded view swaps it, keep the
+  // selection only if it is still offered; otherwise fall back to the first
+  // selectable room instead of the session location
+  useEffect(() => {
+    if (queueRoomLocations.length === 0) return;
+    if (queueRoomLocations.some((option) => option.uuid === selectedNextQueueLocation)) return;
+    const firstSelectable = queueRoomLocations.find((option) => option.selectable)?.uuid;
+    if (firstSelectable) {
+      setSelectedNextQueueLocation(firstSelectable);
+      setValue('locationTo', firstSelectable);
+    }
+  }, [queueRoomLocations, selectedNextQueueLocation, setValue]);
 
   const handleSave = useCallback(async () => {
     try {
@@ -390,7 +414,19 @@ const MoveToNextServicePointForm: React.FC<
         {status === QueueStatus.Completed && (
           <>
             <section className={styles.section}>
-              <div className={styles.sectionTitle}>{t('nextServicePoint', 'Next service point')}</div>
+              <div className={styles.sectionTitleRow}>
+                <div className={styles.sectionTitle}>{t('nextServicePoint', 'Next service point')}</div>
+                <Button
+                  kind="ghost"
+                  size="sm"
+                  renderIcon={Earth}
+                  onClick={() => setShowAllLocations(!showAllLocations)}
+                >
+                  {showAllLocations
+                    ? t('myLocationRooms', 'My location')
+                    : t('allQueueRooms', 'All locations')}
+                </Button>
+              </div>
               <ResponsiveWrapper isTablet={isTablet}>
                 <Controller
                   name="locationTo"
@@ -402,7 +438,7 @@ const MoveToNextServicePointForm: React.FC<
                       id="nextQueueLocation"
                       name="nextQueueLocation"
                       labelText=""
-                      disabled={errorLoadingQueueRooms}
+                      disabled={errorLoadingQueueRooms || (showAllLocations && isLoadingAllRooms)}
                       invalid={!!errors.locationTo}
                       invalidText={errors.locationTo?.message}
                       value={field.value}
