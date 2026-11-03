@@ -23,7 +23,16 @@
 .right-justified-items {
   @include type.type-style('body-compact-02');
   color: $text-02;
-  padding-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: spacing.$spacing-03;
+  padding-right: spacing.$spacing-05;
+}
+
+.location-summary {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .page-name {
@@ -40,7 +49,6 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  margin-right: 1rem;
 }
 
 .clinic {
@@ -48,7 +56,6 @@
   justify-content: flex-end;
   align-items: center;
   margin-top: 1rem;
-  margin-right: 2rem;
 }
 
 .value {

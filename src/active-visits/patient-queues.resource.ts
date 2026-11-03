@@ -251,6 +251,56 @@ export function usePatientQueues(filter: PatientQueueFilter) {
   };
 }
 
+const LAB_RESULTS_READY_COMMENT = 'has results';
+
+export function isResultsReadyQueue(queue: PatientQueue) {
+  return (
+    queue?.status?.toUpperCase() === 'PENDING' && queue?.comment?.trim().toLowerCase() === LAB_RESULTS_READY_COMMENT
+  );
+}
+
+/**
+ * Returns actionable laboratory-result queue entries for one clinical room.
+ * The backend creates these as ordinary PENDING entries and marks their
+ * comment as "has results". Polling keeps the notification useful even when
+ * the dashboard stays open throughout the laboratory workflow.
+ */
+export function useResultsReadyQueues(queueRoomUuid?: string) {
+  const apiUrl = queueRoomUuid
+    ? `${restBaseUrl}/patientqueue${toQueryParams({
+        room: queueRoomUuid,
+        status: 'pending',
+        startIndex: 0,
+        limit: 1000,
+        totalCount: true,
+        v: ResourceRepresentation.Full,
+      })}&onlyInQueueRooms=true`
+    : null;
+
+  const { data, error, isLoading, isValidating, mutate } = useSWR<{ data: PageableResult<PatientQueue> }, Error>(
+    apiUrl,
+    openmrsFetch,
+    {
+      refreshInterval: 30_000,
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+    },
+  );
+
+  const items = (data?.data?.results ?? [])
+    .filter(isResultsReadyQueue)
+    .sort((a, b) => new Date(a.dateCreated).getTime() - new Date(b.dateCreated).getTime());
+
+  return {
+    items,
+    count: items.length,
+    error,
+    isLoading,
+    isValidating,
+    mutate,
+  };
+}
+
 export function usePatientQueuePages(
   currentLocation: string,
   currentStatus: string,

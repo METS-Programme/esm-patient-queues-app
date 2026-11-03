@@ -1,4 +1,4 @@
-import React, { type AnchorHTMLAttributes, useCallback, useEffect } from 'react';
+import React, { type AnchorHTMLAttributes, useCallback } from 'react';
 
 import { Button } from '@carbon/react';
 import { Dashboard } from '@carbon/react/icons';
@@ -15,19 +15,14 @@ interface NameLinkProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
 const ViewQueuePatientActionMenu: React.FC<NameLinkProps> = ({ from, to, queueUuid }) => {
   const { t } = useTranslation();
 
-  useEffect(() => {
-    if (queueUuid) {
-      updateSelectedPatientQueueUuid(queueUuid);
-    }
-  }, [queueUuid]);
-
   const handleNameClick = useCallback(
     (event: any) => {
       event.preventDefault();
+      updateSelectedPatientQueueUuid(queueUuid);
       localStorage.setItem('fromPage', from);
       navigate({ to });
     },
-    [from, to],
+    [from, queueUuid, to],
   );
 
   return (
