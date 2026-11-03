@@ -6,8 +6,14 @@ import { useTranslation } from 'react-i18next';
 import styles from './patient-queue-header.scss';
 import PatientQueueIllustration from './patient-queue-illustration.component';
 import { useParentLocation } from '../../active-visits/patient-queues.resource';
+import ResultsReadyNotification from '../results-ready/results-ready-notification.component';
 
-const PatientQueueHeader: React.FC<{ title?: string }> = ({ title }) => {
+interface PatientQueueHeaderProps {
+  title?: string;
+  showResultsReady?: boolean;
+}
+
+const PatientQueueHeader: React.FC<PatientQueueHeaderProps> = ({ title, showResultsReady = false }) => {
   const { t } = useTranslation();
   const userSession = useSession();
 
@@ -26,15 +32,18 @@ const PatientQueueHeader: React.FC<{ title?: string }> = ({ title }) => {
           </div>
         </div>
         <div className={styles['right-justified-items']}>
-          <div className={styles['date-and-location']}>
-            <Location size={16} />
-            <span className={styles.value}>{userLocation}</span>
-            <span className={styles.middot}>&middot;</span>
-            <Calendar size={16} />
-            <span className={styles.value}>{formatDate(new Date(), { mode: 'standard' })}</span>
-          </div>
-          <div className={styles['clinic']}>
-            <span>{location?.parentLocation?.display}</span>
+          {showResultsReady && <ResultsReadyNotification queueRoomUuid={userSession?.sessionLocation?.uuid} />}
+          <div className={styles['location-summary']}>
+            <div className={styles['date-and-location']}>
+              <Location size={16} />
+              <span className={styles.value}>{userLocation}</span>
+              <span className={styles.middot}>&middot;</span>
+              <Calendar size={16} />
+              <span className={styles.value}>{formatDate(new Date(), { mode: 'standard' })}</span>
+            </div>
+            <div className={styles['clinic']}>
+              <span>{location?.parentLocation?.display}</span>
+            </div>
           </div>
         </div>
       </div>

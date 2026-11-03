@@ -18,7 +18,7 @@ const ClinicalRoomHome: React.FC = () => {
   return (
     <PrivilegeGate privilege={config.clinicianDashboardPrivilege}>
       <div>
-        <PatientQueueHeader title="Clinical Room" />
+        <PatientQueueHeader title="Clinical Room" showResultsReady />
         <QueueSummaryTiles />
 
         {/* table data */}

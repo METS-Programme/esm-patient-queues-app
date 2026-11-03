@@ -1,0 +1,18 @@
+{
+  "transform": {
+    "^.+\\.(j|t)sx?$": ["@swc/jest"]
+  },
+  "transformIgnorePatterns": [
+    "/node_modules/(?!@openmrs)"
+  ],
+  "moduleNameMapper": {
+    "@openmrs/esm-framework": "@openmrs/esm-framework/mock",
+    "^lodash-es$": "lodash",
+    "^lodash-es/(.*)$": "lodash/$1",
+    "\\.(s?css)$": "identity-obj-proxy"
+  },
+  "testEnvironment": "jsdom",
+  "testEnvironmentOptions": {
+    "url": "http://localhost/"
+  }
+}
